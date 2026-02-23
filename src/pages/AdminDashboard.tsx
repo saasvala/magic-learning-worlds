@@ -1,25 +1,8 @@
 import { motion } from "framer-motion";
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, Layers, FileText,
-  CalendarCheck, DollarSign, BarChart3, Settings, LogOut,
-  TrendingUp, UserCheck, Search, Bell
+  Users, GraduationCap, TrendingUp, UserCheck, Search, Bell
 } from "lucide-react";
-import { DashboardLayout, SidebarItem } from "@/components/DashboardLayout";
-
-const sidebarItems: SidebarItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Students", url: "/admin/students", icon: Users },
-  { title: "Teachers", url: "/admin/teachers", icon: GraduationCap },
-  { title: "Classes", url: "/admin/classes", icon: Layers },
-  { title: "Subjects", url: "/admin/subjects", icon: BookOpen },
-  { title: "Curriculum", url: "/admin/curriculum", icon: FileText },
-  { title: "Exams", url: "/admin/exams", icon: FileText },
-  { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
-  { title: "Finance", url: "/admin/finance", icon: DollarSign },
-  { title: "Reports", url: "/admin/reports", icon: BarChart3 },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
-  { title: "Logout", url: "/", icon: LogOut },
-];
+import { AdminPageShell } from "@/components/AdminPageShell";
 
 const stats = [
   { label: "Total Students", value: "2,847", change: "+12%", icon: Users, color: "text-magic-blue" },
@@ -37,20 +20,13 @@ const recentActivity = [
 ];
 
 const gradePerformance = [
-  { grade: "LKG", mastery: 92 },
-  { grade: "UKG", mastery: 89 },
-  { grade: "Grade 1", mastery: 88 },
-  { grade: "Grade 2", mastery: 82 },
-  { grade: "Grade 3", mastery: 76 },
-  { grade: "Grade 4", mastery: 71 },
-  { grade: "Grade 5", mastery: 68 },
-  { grade: "Grade 6", mastery: 74 },
-  { grade: "Grade 7", mastery: 70 },
-  { grade: "Grade 8", mastery: 66 },
-  { grade: "Grade 9", mastery: 63 },
-  { grade: "Grade 10", mastery: 72 },
-  { grade: "Grade 11", mastery: 75 },
-  { grade: "Grade 12", mastery: 78 },
+  { grade: "LKG", mastery: 92 }, { grade: "UKG", mastery: 89 },
+  { grade: "Grade 1", mastery: 88 }, { grade: "Grade 2", mastery: 82 },
+  { grade: "Grade 3", mastery: 76 }, { grade: "Grade 4", mastery: 71 },
+  { grade: "Grade 5", mastery: 68 }, { grade: "Grade 6", mastery: 74 },
+  { grade: "Grade 7", mastery: 70 }, { grade: "Grade 8", mastery: 66 },
+  { grade: "Grade 9", mastery: 63 }, { grade: "Grade 10", mastery: 72 },
+  { grade: "Grade 11", mastery: 75 }, { grade: "Grade 12", mastery: 78 },
 ];
 
 function AdminHome() {
@@ -65,10 +41,7 @@ function AdminHome() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                placeholder="Search..."
-                className="pl-9 pr-3 py-2 text-sm bg-muted rounded-lg border-none outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary w-48"
-              />
+              <input placeholder="Search..." className="pl-9 pr-3 py-2 text-sm bg-muted rounded-lg border-none outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary w-48" />
             </div>
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell className="w-4 h-4 text-muted-foreground" />
@@ -77,16 +50,9 @@ function AdminHome() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass rounded-xl p-5"
-            >
+            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <s.icon className={`w-5 h-5 ${s.color}`} />
                 <span className="text-xs font-medium text-xp-green">{s.change}</span>
@@ -98,7 +64,6 @@ function AdminHome() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Activity */}
           <div className="glass rounded-xl p-5">
             <h3 className="font-semibold mb-4">Recent Activity</h3>
             <div className="space-y-3">
@@ -114,7 +79,6 @@ function AdminHome() {
             </div>
           </div>
 
-          {/* Grade Performance (ALL grades LKG–12) */}
           <div className="glass rounded-xl p-5">
             <h3 className="font-semibold mb-4">Grade Performance (LKG–12)</h3>
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
@@ -139,14 +103,8 @@ function AdminHome() {
 
 export default function AdminDashboard() {
   return (
-    <DashboardLayout
-      items={sidebarItems}
-      roleLabel="School Admin"
-      roleEmoji="🏫"
-      userName="Admin"
-      homeUrl="/admin"
-    >
+    <AdminPageShell>
       <AdminHome />
-    </DashboardLayout>
+    </AdminPageShell>
   );
 }

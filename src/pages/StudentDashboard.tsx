@@ -1,29 +1,12 @@
 import { motion } from "framer-motion";
 import {
-  Home, Globe, BookOpen, FileText, GraduationCap, Bot,
-  Trophy, BarChart3, Settings, LogOut, Flame, Star,
   ChevronRight, Lock, CheckCircle2, Swords, Crown, Zap,
-  User, Shield, AlertTriangle
+  User, Shield, AlertTriangle, Flame, Star, Trophy
 } from "lucide-react";
-import { DashboardLayout, SidebarItem } from "@/components/DashboardLayout";
+import { StudentPageShell } from "@/components/StudentPageShell";
 import { FloatingStars, GlowOrb } from "@/components/animations/MagicEffects";
 import { useState } from "react";
-
-const sidebarItems: SidebarItem[] = [
-  { title: "Home", url: "/student", icon: Home },
-  { title: "My Worlds", url: "/student/worlds", icon: Globe },
-  { title: "Subjects", url: "/student/subjects", icon: BookOpen },
-  { title: "Assignments", url: "/student/assignments", icon: FileText },
-  { title: "Exams", url: "/student/exams", icon: GraduationCap },
-  { title: "AI Tutor", url: "/student/ai-tutor", icon: Bot },
-  { title: "Rewards", url: "/student/rewards", icon: Trophy },
-  { title: "Leaderboard", url: "/student/leaderboard", icon: BarChart3 },
-  { title: "Progress Report", url: "/student/progress", icon: BarChart3 },
-  { title: "Settings", url: "/student/settings", icon: Settings },
-  { title: "Logout", url: "/", icon: LogOut },
-];
-
-const xpData = { current: 2450, max: 3000, level: 12 };
+import { useAuth } from "@/contexts/AuthContext";
 
 const kingdoms = [
   { name: "English", emoji: "📖", progress: 85, unlocked: true },
@@ -32,8 +15,8 @@ const kingdoms = [
   { name: "Filipino", emoji: "🇵🇭", progress: 90, unlocked: true },
   { name: "Araling Panlipunan", emoji: "🌏", progress: 45, unlocked: true },
   { name: "MAPEH", emoji: "🎵", progress: 30, unlocked: true },
-  { name: "Values Education", emoji: "💖", progress: 0, unlocked: false },
-  { name: "ICT", emoji: "💻", progress: 0, unlocked: false },
+  { name: "Art & Design", emoji: "🎨", progress: 0, unlocked: false },
+  { name: "Life Skills", emoji: "💡", progress: 0, unlocked: false },
 ];
 
 const missions = [
@@ -56,52 +39,53 @@ const badges = [
 
 function StudentHome() {
   const [selectedKingdom, setSelectedKingdom] = useState<string | null>("English");
+  const { profile } = useAuth();
+  const xp = profile?.xp_total || 0;
+  const level = profile?.level || 1;
+  const streak = profile?.daily_streak || 0;
 
   return (
     <div className="p-6 relative">
       <FloatingStars />
 
-      {/* Welcome + Stats Bar */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <div className="flex flex-wrap items-center gap-4 mb-4">
-          {/* Avatar */}
           <div className="w-14 h-14 rounded-2xl bg-gradient-gold flex items-center justify-center shadow-glow-gold">
             <User className="w-7 h-7 text-primary-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold">
-              Welcome back, <span className="text-gradient-gold">Adventurer!</span>
+              Welcome back, <span className="text-gradient-gold">{profile?.full_name || "Adventurer"}!</span>
             </h1>
-            <p className="text-muted-foreground text-sm">Grade 5 • World of Discovery</p>
+            <p className="text-muted-foreground text-sm">{profile?.grade ? `Grade ${profile.grade}` : "Explorer"} • World of Discovery</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted">
               <Flame className="w-4 h-4 text-streak-orange" />
-              <span className="text-sm font-bold text-streak-orange">7</span>
+              <span className="text-sm font-bold text-streak-orange">{streak}</span>
               <span className="text-xs text-muted-foreground">Streak</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted">
               <Star className="w-4 h-4 text-primary" />
-              <span className="text-sm font-bold text-primary">{xpData.current}</span>
+              <span className="text-sm font-bold text-primary">{xp}</span>
               <span className="text-xs text-muted-foreground">XP</span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted">
               <Crown className="w-4 h-4 text-magic-purple" />
-              <span className="text-sm font-bold text-magic-purple">Lvl {xpData.level}</span>
+              <span className="text-sm font-bold text-magic-purple">Lvl {level}</span>
             </div>
           </div>
         </div>
 
-        {/* XP Bar */}
         <div className="max-w-md">
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-muted-foreground">Level {xpData.level}</span>
-            <span className="text-primary font-medium">{xpData.current} / {xpData.max} XP</span>
+            <span className="text-muted-foreground">Level {level}</span>
+            <span className="text-primary font-medium">{xp} / {level * 500} XP</span>
           </div>
           <div className="h-2.5 bg-muted rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(xpData.current / xpData.max) * 100}%` }}
+              animate={{ width: `${Math.min((xp / (level * 500)) * 100, 100)}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
               className="h-full bg-gradient-gold rounded-full"
             />
@@ -109,12 +93,8 @@ function StudentHome() {
         </div>
       </motion.div>
 
-      {/* Quick Actions */}
       <div className="flex flex-wrap gap-3 mb-8">
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold shadow-glow-gold"
-        >
+        <motion.button whileHover={{ scale: 1.03 }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold shadow-glow-gold">
           <ChevronRight className="w-4 h-4" /> Continue Learning
         </motion.button>
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl glass text-sm">
@@ -124,7 +104,6 @@ function StudentHome() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Kingdom Map */}
         <div className="lg:col-span-2 space-y-6">
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -156,12 +135,11 @@ function StudentHome() {
             </div>
           </div>
 
-          {/* Mission Path */}
           {selectedKingdom && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
                 <Swords className="w-4 h-4 text-magic-purple" />
-                {selectedKingdom} — Chapter 3: Grammar
+                {selectedKingdom} — Mission Path
               </h3>
               <div className="space-y-2">
                 {missions.map((m, i) => (
@@ -197,9 +175,7 @@ function StudentHome() {
           )}
         </div>
 
-        {/* Right Sidebar */}
         <div className="space-y-5">
-          {/* Daily Challenge */}
           <div className="glass rounded-2xl p-5 relative overflow-hidden">
             <GlowOrb color="primary" size={80} className="-top-8 -right-8" />
             <h3 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
@@ -217,7 +193,6 @@ function StudentHome() {
             </div>
           </div>
 
-          {/* Badges */}
           <div className="glass rounded-2xl p-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-primary" /> Badges
@@ -232,7 +207,6 @@ function StudentHome() {
             </div>
           </div>
 
-          {/* Leaderboard */}
           <div className="glass rounded-2xl p-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <Shield className="w-4 h-4 text-magic-purple" /> Leaderboard
@@ -240,9 +214,9 @@ function StudentHome() {
             {[
               { name: "Maria S.", xp: 4200, rank: 1 },
               { name: "Juan D.", xp: 3800, rank: 2 },
-              { name: "You", xp: 2450, rank: 5 },
+              { name: profile?.full_name || "You", xp: xp, rank: 5 },
             ].map((p) => (
-              <div key={p.name} className={`flex items-center gap-3 p-2 rounded-lg mb-1 ${p.name === "You" ? "bg-primary/10" : ""}`}>
+              <div key={p.name} className={`flex items-center gap-3 p-2 rounded-lg mb-1 ${p.rank === 5 ? "bg-primary/10" : ""}`}>
                 <span className="text-xs font-bold text-muted-foreground w-4">#{p.rank}</span>
                 <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">{p.name[0]}</div>
                 <span className="text-sm flex-1 font-medium">{p.name}</span>
@@ -258,14 +232,8 @@ function StudentHome() {
 
 export default function StudentDashboard() {
   return (
-    <DashboardLayout
-      items={sidebarItems}
-      roleLabel="Student"
-      roleEmoji="🎮"
-      userName="Miguel"
-      homeUrl="/student"
-    >
+    <StudentPageShell>
       <StudentHome />
-    </DashboardLayout>
+    </StudentPageShell>
   );
 }

@@ -1,24 +1,9 @@
 import { motion } from "framer-motion";
 import {
-  Globe, Building2, CreditCard, BookOpen, Bot, DollarSign,
-  ShieldCheck, Activity, Database, Settings, LogOut,
-  TrendingUp, Server, AlertCircle, CheckCircle2
+  Globe, Building2, DollarSign, Activity,
+  Server, AlertCircle, CheckCircle2, ShieldCheck
 } from "lucide-react";
-import { DashboardLayout, SidebarItem } from "@/components/DashboardLayout";
-
-const sidebarItems: SidebarItem[] = [
-  { title: "Global Dashboard", url: "/super-admin", icon: Globe },
-  { title: "Schools", url: "/super-admin/schools", icon: Building2 },
-  { title: "Subscriptions", url: "/super-admin/subscriptions", icon: CreditCard },
-  { title: "Content Control", url: "/super-admin/content", icon: BookOpen },
-  { title: "AI Control", url: "/super-admin/ai", icon: Bot },
-  { title: "Revenue", url: "/super-admin/revenue", icon: DollarSign },
-  { title: "Security Logs", url: "/super-admin/security", icon: ShieldCheck },
-  { title: "System Health", url: "/super-admin/health", icon: Activity },
-  { title: "Backup", url: "/super-admin/backup", icon: Database },
-  { title: "Settings", url: "/super-admin/settings", icon: Settings },
-  { title: "Logout", url: "/", icon: LogOut },
-];
+import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
 
 const globalStats = [
   { label: "Total Schools", value: "48", change: "+6", icon: Building2, color: "text-magic-blue" },
@@ -57,16 +42,9 @@ function SuperAdminHome() {
         <h1 className="text-2xl font-bold mb-1">Global Dashboard</h1>
         <p className="text-muted-foreground text-sm mb-6">Magic Learning World • Platform Overview</p>
 
-        {/* Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {globalStats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass rounded-xl p-5"
-            >
+            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <s.icon className={`w-5 h-5 ${s.color}`} />
                 {s.change && <span className="text-xs font-medium text-xp-green">{s.change}</span>}
@@ -78,11 +56,8 @@ function SuperAdminHome() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
-          {/* Schools */}
           <div className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-magic-blue" /> Schools
-            </h3>
+            <h3 className="font-semibold mb-4 flex items-center gap-2"><Building2 className="w-4 h-4 text-magic-blue" /> Schools</h3>
             <div className="space-y-2">
               {schools.map((s) => (
                 <div key={s.name} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
@@ -93,28 +68,19 @@ function SuperAdminHome() {
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                     s.plan === "Enterprise" ? "bg-magic-purple/20 text-magic-purple" :
                     s.plan === "Premium" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {s.plan}
-                  </span>
+                  }`}>{s.plan}</span>
                   <span className={`w-2 h-2 rounded-full ${s.status === "active" ? "bg-xp-green" : "bg-streak-orange"}`} />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* System Health */}
           <div className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Server className="w-4 h-4 text-xp-green" /> System Health
-            </h3>
+            <h3 className="font-semibold mb-4 flex items-center gap-2"><Server className="w-4 h-4 text-xp-green" /> System Health</h3>
             <div className="space-y-2">
               {systemHealth.map((s) => (
                 <div key={s.service} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
-                  {s.status === "operational" ? (
-                    <CheckCircle2 className="w-4 h-4 text-xp-green shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-streak-orange shrink-0" />
-                  )}
+                  {s.status === "operational" ? <CheckCircle2 className="w-4 h-4 text-xp-green shrink-0" /> : <AlertCircle className="w-4 h-4 text-streak-orange shrink-0" />}
                   <div className="flex-1">
                     <div className="text-sm font-medium">{s.service}</div>
                     <div className="text-xs text-muted-foreground capitalize">{s.status}</div>
@@ -126,17 +92,13 @@ function SuperAdminHome() {
           </div>
         </div>
 
-        {/* Security Logs */}
         <div className="glass rounded-xl p-5">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-destructive" /> Security Logs
-          </h3>
+          <h3 className="font-semibold mb-4 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-destructive" /> Security Logs</h3>
           <div className="space-y-2">
             {securityLogs.map((l, i) => (
               <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
                 <div className={`w-2 h-2 rounded-full shrink-0 ${
-                  l.severity === "high" ? "bg-destructive" :
-                  l.severity === "medium" ? "bg-streak-orange" : "bg-xp-green"
+                  l.severity === "high" ? "bg-destructive" : l.severity === "medium" ? "bg-streak-orange" : "bg-xp-green"
                 }`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm truncate">{l.event}</div>
@@ -145,9 +107,7 @@ function SuperAdminHome() {
                 <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-medium ${
                   l.severity === "high" ? "bg-destructive/20 text-destructive" :
                   l.severity === "medium" ? "bg-streak-orange/20 text-streak-orange" : "bg-xp-green/20 text-xp-green"
-                }`}>
-                  {l.severity}
-                </span>
+                }`}>{l.severity}</span>
               </div>
             ))}
           </div>
@@ -159,14 +119,8 @@ function SuperAdminHome() {
 
 export default function SuperAdminDashboard() {
   return (
-    <DashboardLayout
-      items={sidebarItems}
-      roleLabel="Super Admin"
-      roleEmoji="👑"
-      userName="SuperAdmin"
-      homeUrl="/super-admin"
-    >
+    <SuperAdminPageShell>
       <SuperAdminHome />
-    </DashboardLayout>
+    </SuperAdminPageShell>
   );
 }

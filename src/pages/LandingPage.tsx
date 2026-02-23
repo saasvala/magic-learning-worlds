@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { FloatingStars, GlowOrb } from "@/components/animations/MagicEffects";
-import { Sparkles, BookOpen, Trophy, Gamepad2, GraduationCap, Shield } from "lucide-react";
+import { Sparkles, BookOpen, Trophy, Gamepad2, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const HeroSection = () => (
@@ -35,32 +35,18 @@ const HeroSection = () => (
 
         <div className="flex flex-wrap gap-3 justify-center">
           <Link
-            to="/student"
+            to="/auth"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold shadow-glow-gold hover:scale-105 transition-transform"
           >
             <Gamepad2 className="w-5 h-5" />
-            Student
+            Get Started
           </Link>
           <Link
-            to="/teacher"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-magic text-secondary-foreground font-semibold shadow-glow-purple hover:scale-105 transition-transform"
+            to="/auth"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass text-foreground font-semibold hover:scale-105 transition-transform"
           >
             <GraduationCap className="w-5 h-5" />
-            Teacher
-          </Link>
-          <Link
-            to="/admin"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass text-foreground font-semibold hover:scale-105 transition-transform"
-          >
-            <BookOpen className="w-5 h-5" />
-            School Admin
-          </Link>
-          <Link
-            to="/super-admin"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass text-foreground font-semibold hover:scale-105 transition-transform"
-          >
-            <Shield className="w-5 h-5" />
-            Super Admin
+            Sign In
           </Link>
         </div>
       </motion.div>

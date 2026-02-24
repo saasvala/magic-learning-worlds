@@ -15,6 +15,9 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherQuizBuilder from "./pages/TeacherQuizBuilder";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCurriculum from "./pages/AdminCurriculum";
+import AdminStudents from "./pages/AdminStudents";
+import AdminTeachers from "./pages/AdminTeachers";
+import AdminClasses from "./pages/AdminClasses";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminContent from "./pages/SuperAdminContent";
 import NotFound from "./pages/NotFound";
@@ -69,9 +72,9 @@ const App = () => (
 
             {/* School Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/students" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminPlaceholderPage title="Students" icon={Users} description="Manage all students in your school." /></ProtectedRoute>} />
-            <Route path="/admin/teachers" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminPlaceholderPage title="Teachers" icon={GraduationCap} description="Manage teacher accounts and assignments." /></ProtectedRoute>} />
-            <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminPlaceholderPage title="Classes" icon={Layers} description="Set up classes, sections, and academic years." /></ProtectedRoute>} />
+            <Route path="/admin/students" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminStudents /></ProtectedRoute>} />
+            <Route path="/admin/teachers" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminTeachers /></ProtectedRoute>} />
+            <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminClasses /></ProtectedRoute>} />
             <Route path="/admin/subjects" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminCurriculum /></ProtectedRoute>} />
             <Route path="/admin/curriculum" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminCurriculum /></ProtectedRoute>} />
             <Route path="/admin/exams" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminPlaceholderPage title="Exams" icon={FileText} description="Configure exam schedules and weight settings." /></ProtectedRoute>} />

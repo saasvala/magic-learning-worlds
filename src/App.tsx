@@ -12,6 +12,7 @@ import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentSubjects from "./pages/StudentSubjects";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherQuizBuilder from "./pages/TeacherQuizBuilder";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCurriculum from "./pages/AdminCurriculum";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -60,7 +61,7 @@ const App = () => (
             <Route path="/teacher/classes" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="My Classes" icon={Users} description="Manage your classes and view student lists." /></ProtectedRoute>} />
             <Route path="/teacher/lessons" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Lessons" icon={BookOpen} description="Upload and manage lesson content (videos, PDFs)." /></ProtectedRoute>} />
             <Route path="/teacher/assignments" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Assignments" icon={FileText} description="Create and grade student assignments." /></ProtectedRoute>} />
-            <Route path="/teacher/exams" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Exams" icon={GraduationCap} description="Build quizzes and manage exam schedules." /></ProtectedRoute>} />
+            <Route path="/teacher/exams" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherQuizBuilder /></ProtectedRoute>} />
             <Route path="/teacher/attendance" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Attendance" icon={CalendarCheck} description="Mark and review daily attendance." /></ProtectedRoute>} />
             <Route path="/teacher/analytics" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Analytics" icon={BarChart3} description="View student performance analytics and trends." /></ProtectedRoute>} />
             <Route path="/teacher/messages" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherPlaceholderPage title="Messages" icon={MessageSquare} description="Communicate with students and parents." /></ProtectedRoute>} />

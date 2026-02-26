@@ -11,6 +11,7 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentSubjects from "./pages/StudentSubjects";
+import StudentAITutor from "./pages/StudentAITutor";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherQuizBuilder from "./pages/TeacherQuizBuilder";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -53,7 +54,7 @@ const App = () => (
             <Route path="/student/worlds" element={<ProtectedRoute allowedRoles={["student"]}><StudentSubjects /></ProtectedRoute>} />
             <Route path="/student/assignments" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="Assignments" icon={FileText} description="View and submit your assignments here." /></ProtectedRoute>} />
             <Route path="/student/exams" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="Exams" icon={GraduationCap} description="Take quizzes, chapter tests, and boss battles." /></ProtectedRoute>} />
-            <Route path="/student/ai-tutor" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="AI Tutor" icon={Bot} description="Your personal AI learning assistant in 20 languages." /></ProtectedRoute>} />
+            <Route path="/student/ai-tutor" element={<ProtectedRoute allowedRoles={["student"]}><StudentAITutor /></ProtectedRoute>} />
             <Route path="/student/rewards" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="Rewards" icon={Trophy} description="Earn badges, treasure chests, and unlock rewards." /></ProtectedRoute>} />
             <Route path="/student/leaderboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="Leaderboard" icon={BarChart3} description="See how you rank among fellow adventurers." /></ProtectedRoute>} />
             <Route path="/student/progress" element={<ProtectedRoute allowedRoles={["student"]}><StudentPlaceholderPage title="Progress Report" icon={BarChart3} description="Track your learning journey across all subjects." /></ProtectedRoute>} />

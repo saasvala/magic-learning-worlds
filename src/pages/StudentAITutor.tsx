@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Bot, Send, Sparkles, User, Loader2, Globe } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 const LANGUAGES = [
   { value: "en", label: "English" },
@@ -142,16 +143,22 @@ function ChatBubble({ msg, isLast }: { msg: Msg; isLast: boolean }) {
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
       </div>
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
+            ? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
             : "bg-muted/60 text-foreground rounded-tl-sm"
         }`}
       >
-        {msg.content || (
+        {!msg.content ? (
           <span className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
           </span>
+        ) : isUser ? (
+          msg.content
+        ) : (
+          <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-medium [&_code]:bg-background/50 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-background/50 [&_pre]:p-2 [&_pre]:rounded-lg">
+            <ReactMarkdown>{msg.content}</ReactMarkdown>
+          </div>
         )}
       </div>
     </motion.div>

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Home, Users, BookOpen, FileText, GraduationCap, CalendarCheck,
-  BarChart3, MessageSquare, Settings, LogOut
+  BarChart3, MessageSquare, Settings, LogOut, ClipboardCheck, Wrench
 } from "lucide-react";
 
 const sidebarItems: SidebarItem[] = [
@@ -12,8 +12,10 @@ const sidebarItems: SidebarItem[] = [
   { title: "Lessons", url: "/teacher/lessons", icon: BookOpen },
   { title: "Assignments", url: "/teacher/assignments", icon: FileText },
   { title: "Exams", url: "/teacher/exams", icon: GraduationCap },
+  { title: "Project Review", url: "/teacher/project-review", icon: ClipboardCheck },
   { title: "Attendance", url: "/teacher/attendance", icon: CalendarCheck },
   { title: "Analytics", url: "/teacher/analytics", icon: BarChart3 },
+  { title: "Resources", url: "/teacher/resources", icon: Wrench },
   { title: "Messages", url: "/teacher/messages", icon: MessageSquare },
   { title: "Settings", url: "/teacher/settings", icon: Settings },
   { title: "Logout", url: "/auth", icon: LogOut },

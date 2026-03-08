@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Home, Globe, BookOpen, FileText, GraduationCap, Bot,
-  Trophy, BarChart3, Settings, LogOut
+  Trophy, BarChart3, Settings, LogOut, FolderOpen
 } from "lucide-react";
 
 const sidebarItems: SidebarItem[] = [
@@ -13,6 +13,7 @@ const sidebarItems: SidebarItem[] = [
   { title: "Assignments", url: "/student/assignments", icon: FileText },
   { title: "Exams", url: "/student/exams", icon: GraduationCap },
   { title: "AI Tutor", url: "/student/ai-tutor", icon: Bot },
+  { title: "Portfolio", url: "/student/portfolio", icon: FolderOpen },
   { title: "Rewards", url: "/student/rewards", icon: Trophy },
   { title: "Leaderboard", url: "/student/leaderboard", icon: BarChart3 },
   { title: "Progress Report", url: "/student/progress", icon: BarChart3 },

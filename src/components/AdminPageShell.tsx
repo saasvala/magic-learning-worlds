@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Layers, FileText,
-  CalendarCheck, DollarSign, BarChart3, Settings, LogOut
+  CalendarCheck, DollarSign, BarChart3, Settings, LogOut, Brain, Edit
 } from "lucide-react";
 
 const sidebarItems: SidebarItem[] = [
@@ -13,9 +13,11 @@ const sidebarItems: SidebarItem[] = [
   { title: "Classes", url: "/admin/classes", icon: Layers },
   { title: "Subjects", url: "/admin/subjects", icon: BookOpen },
   { title: "Curriculum", url: "/admin/curriculum", icon: FileText },
+  { title: "Curriculum Editor", url: "/admin/curriculum-editor", icon: Edit },
   { title: "Exams", url: "/admin/exams", icon: FileText },
   { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
   { title: "Finance", url: "/admin/finance", icon: DollarSign },
+  { title: "Analytics", url: "/admin/analytics", icon: Brain },
   { title: "Reports", url: "/admin/reports", icon: BarChart3 },
   { title: "Settings", url: "/admin/settings", icon: Settings },
   { title: "Logout", url: "/auth", icon: LogOut },

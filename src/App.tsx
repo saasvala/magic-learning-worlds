@@ -18,6 +18,7 @@ import StudentRewards from "./pages/StudentRewards";
 import StudentLeaderboard from "./pages/StudentLeaderboard";
 import StudentProgress from "./pages/StudentProgress";
 import StudentSettings from "./pages/StudentSettings";
+import StudentPortfolio from "./pages/StudentPortfolio";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherQuizBuilder from "./pages/TeacherQuizBuilder";
 import TeacherClasses from "./pages/TeacherClasses";
@@ -27,6 +28,8 @@ import TeacherAttendance from "./pages/TeacherAttendance";
 import TeacherAnalytics from "./pages/TeacherAnalytics";
 import TeacherMessages from "./pages/TeacherMessages";
 import TeacherSettings from "./pages/TeacherSettings";
+import TeacherProjectReview from "./pages/TeacherProjectReview";
+import TeacherResourceCenter from "./pages/TeacherResourceCenter";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCurriculum from "./pages/AdminCurriculum";
 import AdminStudents from "./pages/AdminStudents";
@@ -37,6 +40,8 @@ import AdminAttendance from "./pages/AdminAttendance";
 import AdminFinance from "./pages/AdminFinance";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
+import CurriculumEditor from "./pages/CurriculumEditor";
+import LearningAnalytics from "./pages/LearningAnalytics";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import SuperAdminContent from "./pages/SuperAdminContent";
 import SuperAdminSchools from "./pages/SuperAdminSchools";
@@ -47,6 +52,18 @@ import SuperAdminSecurity from "./pages/SuperAdminSecurity";
 import SuperAdminHealth from "./pages/SuperAdminHealth";
 import SuperAdminBackup from "./pages/SuperAdminBackup";
 import SuperAdminSettings from "./pages/SuperAdminSettings";
+import ContentLibrary from "./pages/ContentLibrary";
+import MediaAssets from "./pages/MediaAssets";
+import GamificationControl from "./pages/GamificationControl";
+import TranslationManager from "./pages/TranslationManager";
+import DeviceSessionManager from "./pages/DeviceSessionManager";
+import ParentDashboard from "./pages/ParentDashboard";
+import ParentAttendance from "./pages/ParentAttendance";
+import ParentHomework from "./pages/ParentHomework";
+import ParentExamResults from "./pages/ParentExamResults";
+import ParentMessages from "./pages/ParentMessages";
+import ParentFees from "./pages/ParentFees";
+import ParentAlerts from "./pages/ParentAlerts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +87,7 @@ const App = () => (
             <Route path="/student/assignments" element={<ProtectedRoute allowedRoles={["student"]}><StudentAssignments /></ProtectedRoute>} />
             <Route path="/student/exams" element={<ProtectedRoute allowedRoles={["student"]}><StudentExams /></ProtectedRoute>} />
             <Route path="/student/ai-tutor" element={<ProtectedRoute allowedRoles={["student"]}><StudentAITutor /></ProtectedRoute>} />
+            <Route path="/student/portfolio" element={<ProtectedRoute allowedRoles={["student"]}><StudentPortfolio /></ProtectedRoute>} />
             <Route path="/student/rewards" element={<ProtectedRoute allowedRoles={["student"]}><StudentRewards /></ProtectedRoute>} />
             <Route path="/student/leaderboard" element={<ProtectedRoute allowedRoles={["student"]}><StudentLeaderboard /></ProtectedRoute>} />
             <Route path="/student/progress" element={<ProtectedRoute allowedRoles={["student"]}><StudentProgress /></ProtectedRoute>} />
@@ -81,8 +99,10 @@ const App = () => (
             <Route path="/teacher/lessons" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherLessons /></ProtectedRoute>} />
             <Route path="/teacher/assignments" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherAssignments /></ProtectedRoute>} />
             <Route path="/teacher/exams" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherQuizBuilder /></ProtectedRoute>} />
+            <Route path="/teacher/project-review" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherProjectReview /></ProtectedRoute>} />
             <Route path="/teacher/attendance" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherAttendance /></ProtectedRoute>} />
             <Route path="/teacher/analytics" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherAnalytics /></ProtectedRoute>} />
+            <Route path="/teacher/resources" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherResourceCenter /></ProtectedRoute>} />
             <Route path="/teacher/messages" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherMessages /></ProtectedRoute>} />
             <Route path="/teacher/settings" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherSettings /></ProtectedRoute>} />
 
@@ -93,9 +113,11 @@ const App = () => (
             <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminClasses /></ProtectedRoute>} />
             <Route path="/admin/subjects" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminCurriculum /></ProtectedRoute>} />
             <Route path="/admin/curriculum" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminCurriculum /></ProtectedRoute>} />
+            <Route path="/admin/curriculum-editor" element={<ProtectedRoute allowedRoles={["school_admin"]}><CurriculumEditor /></ProtectedRoute>} />
             <Route path="/admin/exams" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminExams /></ProtectedRoute>} />
             <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminAttendance /></ProtectedRoute>} />
             <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminFinance /></ProtectedRoute>} />
+            <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={["school_admin"]}><LearningAnalytics /></ProtectedRoute>} />
             <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminReports /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminSettings /></ProtectedRoute>} />
 
@@ -103,13 +125,27 @@ const App = () => (
             <Route path="/super-admin" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/super-admin/schools" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminSchools /></ProtectedRoute>} />
             <Route path="/super-admin/subscriptions" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminSubscriptions /></ProtectedRoute>} />
+            <Route path="/super-admin/content-library" element={<ProtectedRoute allowedRoles={["super_admin"]}><ContentLibrary /></ProtectedRoute>} />
+            <Route path="/super-admin/media" element={<ProtectedRoute allowedRoles={["super_admin"]}><MediaAssets /></ProtectedRoute>} />
             <Route path="/super-admin/content" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminContent /></ProtectedRoute>} />
+            <Route path="/super-admin/gamification" element={<ProtectedRoute allowedRoles={["super_admin"]}><GamificationControl /></ProtectedRoute>} />
+            <Route path="/super-admin/translations" element={<ProtectedRoute allowedRoles={["super_admin"]}><TranslationManager /></ProtectedRoute>} />
             <Route path="/super-admin/ai" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminAI /></ProtectedRoute>} />
             <Route path="/super-admin/revenue" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminRevenue /></ProtectedRoute>} />
+            <Route path="/super-admin/devices" element={<ProtectedRoute allowedRoles={["super_admin"]}><DeviceSessionManager /></ProtectedRoute>} />
             <Route path="/super-admin/security" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminSecurity /></ProtectedRoute>} />
             <Route path="/super-admin/health" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminHealth /></ProtectedRoute>} />
             <Route path="/super-admin/backup" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminBackup /></ProtectedRoute>} />
             <Route path="/super-admin/settings" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminSettings /></ProtectedRoute>} />
+
+            {/* Parent Routes (UI only, no auth role enforcement) */}
+            <Route path="/parent" element={<ParentDashboard />} />
+            <Route path="/parent/attendance" element={<ParentAttendance />} />
+            <Route path="/parent/homework" element={<ParentHomework />} />
+            <Route path="/parent/results" element={<ParentExamResults />} />
+            <Route path="/parent/messages" element={<ParentMessages />} />
+            <Route path="/parent/fees" element={<ParentFees />} />
+            <Route path="/parent/alerts" element={<ParentAlerts />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

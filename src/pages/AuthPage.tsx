@@ -6,11 +6,12 @@ import { FloatingStars, GlowOrb } from "@/components/animations/MagicEffects";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type UserRole = "student" | "teacher" | "school_admin" | "super_admin";
+type UserRole = "student" | "teacher" | "school_admin" | "super_admin" | "parent";
 
 const roleOptions: { value: UserRole; label: string; emoji: string; description: string }[] = [
   { value: "student", label: "Student", emoji: "🎮", description: "Learn, play, conquer worlds" },
   { value: "teacher", label: "Teacher", emoji: "📚", description: "Manage classes & lessons" },
+  { value: "parent", label: "Parent", emoji: "👨‍👩‍👧", description: "Monitor your children" },
   { value: "school_admin", label: "School Admin", emoji: "🏫", description: "Run your school" },
   { value: "super_admin", label: "Super Admin", emoji: "👑", description: "Platform control" },
 ];
@@ -20,6 +21,7 @@ const rolePaths: Record<UserRole, string> = {
   teacher: "/teacher",
   school_admin: "/admin",
   super_admin: "/super-admin",
+  parent: "/parent",
 };
 
 export default function AuthPage() {
@@ -43,7 +45,6 @@ export default function AuthPage() {
       if (error) {
         toast({ title: "Login failed", description: error.message, variant: "destructive" });
       } else {
-        // Fetch profile to determine role redirect
         const { supabase } = await import("@/integrations/supabase/client");
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {

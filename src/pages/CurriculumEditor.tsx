@@ -36,7 +36,7 @@ interface GradeData {
 }
 
 const mediaIcon = (type: string) => {
-  const icons: Record<string, any> = { video: Play, text: FileText, interactive: Film, "3d": Cube };
+  const icons: Record<string, any> = { video: Play, text: FileText, interactive: Film, "3d": Box };
   const Icon = icons[type] || FileText;
   return <Icon className="w-3.5 h-3.5" />;
 };

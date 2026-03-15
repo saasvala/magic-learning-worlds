@@ -138,14 +138,14 @@ const App = () => (
             <Route path="/super-admin/backup" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminBackup /></ProtectedRoute>} />
             <Route path="/super-admin/settings" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminSettings /></ProtectedRoute>} />
 
-            {/* Parent Routes (UI only, no auth role enforcement) */}
-            <Route path="/parent" element={<ParentDashboard />} />
-            <Route path="/parent/attendance" element={<ParentAttendance />} />
-            <Route path="/parent/homework" element={<ParentHomework />} />
-            <Route path="/parent/results" element={<ParentExamResults />} />
-            <Route path="/parent/messages" element={<ParentMessages />} />
-            <Route path="/parent/fees" element={<ParentFees />} />
-            <Route path="/parent/alerts" element={<ParentAlerts />} />
+            {/* Parent Routes */}
+            <Route path="/parent" element={<ProtectedRoute allowedRoles={["parent"]}><ParentDashboard /></ProtectedRoute>} />
+            <Route path="/parent/attendance" element={<ProtectedRoute allowedRoles={["parent"]}><ParentAttendance /></ProtectedRoute>} />
+            <Route path="/parent/homework" element={<ProtectedRoute allowedRoles={["parent"]}><ParentHomework /></ProtectedRoute>} />
+            <Route path="/parent/results" element={<ProtectedRoute allowedRoles={["parent"]}><ParentExamResults /></ProtectedRoute>} />
+            <Route path="/parent/messages" element={<ProtectedRoute allowedRoles={["parent"]}><ParentMessages /></ProtectedRoute>} />
+            <Route path="/parent/fees" element={<ProtectedRoute allowedRoles={["parent"]}><ParentFees /></ProtectedRoute>} />
+            <Route path="/parent/alerts" element={<ProtectedRoute allowedRoles={["parent"]}><ParentAlerts /></ProtectedRoute>} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

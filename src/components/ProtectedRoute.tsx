@@ -29,6 +29,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       teacher: "/teacher",
       school_admin: "/admin",
       super_admin: "/super-admin",
+      parent: "/parent",
     };
     return <Navigate to={rolePaths[profile.role] || "/"} replace />;
   }

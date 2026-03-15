@@ -327,7 +327,7 @@ function CurriculumEditorPage() {
                               {[
                                 { label: "Video", icon: Play, color: "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" },
                                 { label: "Image", icon: Image, color: "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30" },
-                                { label: "3D Model", icon: Cube, color: "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" },
+                                { label: "3D Model", icon: Box, color: "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" },
                                 { label: "Audio", icon: Music, color: "bg-pink-500/20 text-pink-400 hover:bg-pink-500/30" },
                               ].map(m => (
                                 <motion.button

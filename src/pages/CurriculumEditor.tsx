@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AdminPageShell } from "@/components/AdminPageShell";
 import {
   BookOpen, ChevronRight, ChevronDown, GripVertical, Plus, Edit, Film,
-  ArrowLeft, FileText, Play, Image, Cube, Music, Link2
+  ArrowLeft, FileText, Play, Image, Box, Music, Link2
 } from "lucide-react";
 
 interface Topic {

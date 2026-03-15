@@ -605,6 +605,42 @@ export type Database = {
           },
         ]
       }
+      parent_students: {
+        Row: {
+          created_at: string
+          id: string
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_students_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1117,7 +1153,12 @@ export type Database = {
         | "oral"
         | "project"
       subscription_status: "trial" | "active" | "expired" | "cancelled"
-      user_role: "student" | "teacher" | "school_admin" | "super_admin"
+      user_role:
+        | "student"
+        | "teacher"
+        | "school_admin"
+        | "super_admin"
+        | "parent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1283,7 +1324,13 @@ export const Constants = {
         "project",
       ],
       subscription_status: ["trial", "active", "expired", "cancelled"],
-      user_role: ["student", "teacher", "school_admin", "super_admin"],
+      user_role: [
+        "student",
+        "teacher",
+        "school_admin",
+        "super_admin",
+        "parent",
+      ],
     },
   },
 } as const

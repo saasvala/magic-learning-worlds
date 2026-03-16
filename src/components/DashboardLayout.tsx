@@ -102,9 +102,12 @@ export function DashboardLayout({
 
       <SidebarInset>
         {/* Header with trigger */}
-        <header className="sticky top-0 z-40 h-12 flex items-center gap-2 border-b border-border bg-background/80 backdrop-blur-sm px-4">
-          <SidebarTrigger />
-          <span className="text-sm font-medium text-muted-foreground">{roleLabel}</span>
+        <header className="sticky top-0 z-40 h-12 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <span className="text-sm font-medium text-muted-foreground">{roleLabel}</span>
+          </div>
+          <NotificationBell />
         </header>
 
         <div className="flex-1 overflow-auto">

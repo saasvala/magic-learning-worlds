@@ -14,14 +14,20 @@ import { Home } from "lucide-react";
 
 type InsertHandler = (payload: { new: any }) => void;
 
-// ---- Per-test mutable state captured by the mocked Supabase client -----------
-let currentUserId = "";
-let insertHandler: InsertHandler | null = null;
-let initialNotifications: any[] = [];
+// Hoisted shared state — vi.mock factories are hoisted above imports, so any
+// state they touch must also be hoisted to avoid TDZ errors.
+const state = vi.hoisted(() => ({
+  currentUser: { id: "u-default" } as { id: string } | null,
+  insertHandler: null as InsertHandler | null,
+  initialNotifications: [] as any[],
+}));
 
 vi.mock("@/contexts/AuthContext", () => ({
+  // Return the SAME user object reference across renders (real Supabase auth
+  // does this). Otherwise NotificationBell's effect re-runs every render and
+  // we get an infinite subscribe / setState loop.
   useAuth: () => ({
-    user: { id: currentUserId },
+    user: state.currentUser,
     profile: { full_name: "Test User", role: "student" },
     session: null,
     loading: false,
@@ -30,36 +36,40 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
-  const buildSelectChain = () => {
+  const makeChain = () => {
     const chain: any = {
       select: () => chain,
-      eq: () => chain,
+      eq: () => {
+        // eq() is terminal for update().eq() (returns Promise) and chainable
+        // for select().eq(). Return a thenable-chain hybrid.
+        const hybrid: any = {
+          select: () => chain,
+          eq: () => hybrid,
+          order: () => chain,
+          limit: () =>
+            Promise.resolve({ data: state.initialNotifications, error: null }),
+          then: (res: any) => Promise.resolve({ data: null, error: null }).then(res),
+        };
+        return hybrid;
+      },
       order: () => chain,
-      limit: () => Promise.resolve({ data: initialNotifications, error: null }),
-    };
-    return chain;
-  };
-  const buildUpdateChain = () => {
-    const chain: any = {
+      limit: () =>
+        Promise.resolve({ data: state.initialNotifications, error: null }),
       update: () => chain,
-      eq: () => Promise.resolve({ data: null, error: null }),
       in: () => Promise.resolve({ data: null, error: null }),
     };
     return chain;
   };
   const channel: any = {
     on: (_event: string, opts: any, cb: InsertHandler) => {
-      if (opts?.event === "INSERT") insertHandler = cb;
+      if (opts?.event === "INSERT") state.insertHandler = cb;
       return channel;
     },
     subscribe: () => channel,
   };
   return {
     supabase: {
-      from: () => ({
-        ...buildSelectChain(),
-        ...buildUpdateChain(),
-      }),
+      from: () => makeChain(),
       channel: () => channel,
       removeChannel: vi.fn(),
     },
@@ -93,29 +103,27 @@ const ROLES: { name: string; userId: string }[] = [
 
 describe("NotificationBell E2E (per role)", () => {
   beforeEach(() => {
-    insertHandler = null;
-    initialNotifications = [];
+    state.insertHandler = null;
+    state.initialNotifications = [];
   });
 
   for (const role of ROLES) {
     it(`signs in as ${role.name} and shows unread count after a realtime INSERT`, async () => {
-      currentUserId = role.userId;
+      // Stable per-test user reference (mimics real Supabase auth session).
+      state.currentUser = { id: role.userId };
 
       renderShell();
 
-      // Bell renders, no badge yet (no unread notifications).
-      const bell = await screen.findByRole("button", { name: "" }).catch(() => null);
-      const bellByClass = document.querySelector(
-        "button.relative.p-2.rounded-lg"
-      );
-      expect(bellByClass || bell).toBeTruthy();
+      // Bell is in the header.
+      const bell = document.querySelector("button.relative.p-2.rounded-lg");
+      expect(bell).toBeTruthy();
 
-      // Realtime INSERT subscription was registered for this user.
-      await waitFor(() => expect(insertHandler).not.toBeNull());
+      // Realtime INSERT subscription was registered for this signed-in user.
+      await waitFor(() => expect(state.insertHandler).not.toBeNull());
 
       // Simulate Supabase Realtime pushing a new unread notification.
       await act(async () => {
-        insertHandler!({
+        state.insertHandler!({
           new: {
             id: `notif-${role.userId}-1`,
             title: `Hello ${role.name}`,
@@ -136,7 +144,7 @@ describe("NotificationBell E2E (per role)", () => {
 
       // Push a second notification → count becomes "2".
       await act(async () => {
-        insertHandler!({
+        state.insertHandler!({
           new: {
             id: `notif-${role.userId}-2`,
             title: "Second alert",
@@ -157,13 +165,13 @@ describe("NotificationBell E2E (per role)", () => {
   }
 
   it("shows '9+' badge cap when more than 9 unread notifications arrive", async () => {
-    currentUserId = "student-user-id";
+    state.currentUser = { id: "bulk-user" };
     renderShell();
-    await waitFor(() => expect(insertHandler).not.toBeNull());
+    await waitFor(() => expect(state.insertHandler).not.toBeNull());
 
     await act(async () => {
       for (let i = 0; i < 12; i++) {
-        insertHandler!({
+        state.insertHandler!({
           new: {
             id: `bulk-${i}`,
             title: `n${i}`,
@@ -172,7 +180,7 @@ describe("NotificationBell E2E (per role)", () => {
             is_read: false,
             link: null,
             created_at: new Date().toISOString(),
-            user_id: "student-user-id",
+            user_id: "bulk-user",
           },
         });
       }

@@ -2,18 +2,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { Home } from "lucide-react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
- * RBAC Role-Matrix E2E.
+ * RBAC Role-Matrix E2E (exhaustive).
  *
- * For every role, asserts:
- *   1. Allowed route prefixes render the page content + the NotificationBell.
- *   2. Disallowed route prefixes are blocked by ProtectedRoute and redirect
- *      to the role's home (NOT the requested page).
+ * Parses the REAL src/App.tsx route table and, for every (role × route),
+ * asserts ProtectedRoute behavior + that the NotificationBell mounts on
+ * allowed routes. We don't import the real page components (heavy + need
+ * QueryClient, etc.) — instead we re-mount each extracted route through
+ * ProtectedRoute + DashboardLayout with a sentinel page body. This still
+ * exercises the actual allowedRoles matrix from App.tsx.
  */
 
 type Role = "student" | "teacher" | "school_admin" | "super_admin" | "parent";
 
+// ---------- Hoisted shared state for mocks ----------
 const state = vi.hoisted(() => ({
   currentUser: { id: "u" } as { id: string } | null,
   currentRole: "student" as Role,
@@ -71,135 +76,159 @@ vi.mock("@/integrations/supabase/client", () => {
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/DashboardLayout";
 
-// Role → allowed/denied path prefixes (mirrors App.tsx route definitions).
-const MATRIX: Record<
-  Role,
-  { home: string; allowed: string[]; denied: string[] }
-> = {
-  student: {
-    home: "/student",
-    allowed: ["/student", "/student/subjects", "/student/ai-tutor"],
-    denied: ["/teacher", "/admin", "/super-admin", "/parent"],
-  },
-  teacher: {
-    home: "/teacher",
-    allowed: ["/teacher", "/teacher/classes", "/teacher/lessons"],
-    denied: ["/student", "/admin", "/super-admin", "/parent"],
-  },
-  school_admin: {
-    home: "/admin",
-    allowed: ["/admin", "/admin/students", "/admin/curriculum-editor"],
-    denied: ["/student", "/teacher", "/super-admin", "/parent"],
-  },
-  super_admin: {
-    home: "/super-admin",
-    allowed: ["/super-admin", "/super-admin/schools", "/super-admin/security"],
-    denied: ["/student", "/teacher", "/admin", "/parent"],
-  },
-  parent: {
-    home: "/parent",
-    allowed: ["/parent", "/parent/attendance", "/parent/results"],
-    denied: ["/student", "/teacher", "/admin", "/super-admin"],
-  },
+// ---------- Extract the real route table from App.tsx ----------
+interface RouteDef {
+  path: string;
+  allowedRoles: Role[];
+}
+
+const ROLE_HOME: Record<Role, string> = {
+  student: "/student",
+  teacher: "/teacher",
+  school_admin: "/admin",
+  super_admin: "/super-admin",
+  parent: "/parent",
 };
 
-const ROLE_TO_ALLOWED: Record<Role, string> = {
-  student: "student",
-  teacher: "teacher",
-  school_admin: "school_admin",
-  super_admin: "super_admin",
-  parent: "parent",
-};
+const ALL_ROLES: Role[] = [
+  "student",
+  "teacher",
+  "school_admin",
+  "super_admin",
+  "parent",
+];
 
-// Build a mini app with a representative wrapped route per role section,
-// so we can probe Allow/Deny behavior without loading 60 real page modules.
-function MiniApp({ initialPath }: { initialPath: string }) {
-  const wrap = (path: string, allowed: Role) => (
-    <Route
-      key={path}
-      path={path}
-      element={
-        <ProtectedRoute allowedRoles={[ROLE_TO_ALLOWED[allowed]]}>
-          <DashboardLayout
-            items={[{ title: "Home", url: path, icon: Home }]}
-            roleLabel={allowed}
-            roleEmoji="🧪"
-            userName="Tester"
-            homeUrl={path}
-          >
-            <div data-testid="page-content" data-path={path}>
-              page:{path}
-            </div>
-          </DashboardLayout>
-        </ProtectedRoute>
-      }
-    />
+function parseAppRoutes(): RouteDef[] {
+  const src = readFileSync(
+    resolve(__dirname, "../../App.tsx"),
+    "utf8"
   );
+  const routeRegex =
+    /<Route\s+path="([^"]+)"\s+element=\{<ProtectedRoute\s+allowedRoles=\{(\[[^\]]+\])\}>/g;
+  const routes: RouteDef[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = routeRegex.exec(src)) !== null) {
+    const path = m[1];
+    const rolesArr = m[2]
+      .replace(/[\[\]"\s]/g, "")
+      .split(",")
+      .filter(Boolean) as Role[];
+    routes.push({ path, allowedRoles: rolesArr });
+  }
+  return routes;
+}
+
+const ALL_ROUTES = parseAppRoutes();
+
+// Build a synthetic <Routes> tree mirroring the real route table, but with
+// ProtectedRoute wrapping a DashboardLayout + sentinel content. We also need
+// the role's home route present so we can detect redirects.
+function MiniApp({ initialPath }: { initialPath: string }) {
+  // De-dupe (some paths may map to same component twice — irrelevant for RBAC).
+  const seen = new Set<string>();
+  const routes = ALL_ROUTES.filter((r) => {
+    if (seen.has(r.path)) return false;
+    seen.add(r.path);
+    return true;
+  });
 
   return (
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        {MATRIX.student.allowed.map((p) => wrap(p, "student"))}
-        {MATRIX.teacher.allowed.map((p) => wrap(p, "teacher"))}
-        {MATRIX.school_admin.allowed.map((p) => wrap(p, "school_admin"))}
-        {MATRIX.super_admin.allowed.map((p) => wrap(p, "super_admin"))}
-        {MATRIX.parent.allowed.map((p) => wrap(p, "parent"))}
+        {routes.map((r) => (
+          <Route
+            key={r.path}
+            path={r.path}
+            element={
+              <ProtectedRoute allowedRoles={r.allowedRoles}>
+                <DashboardLayout
+                  items={[{ title: "Home", url: r.path, icon: Home }]}
+                  roleLabel={r.allowedRoles[0]}
+                  roleEmoji="🧪"
+                  userName="Tester"
+                  homeUrl={r.path}
+                >
+                  <div data-testid="page-content" data-path={r.path}>
+                    page:{r.path}
+                  </div>
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+        ))}
+        {/* /auth landing pad so unauthenticated redirects don't warn */}
+        <Route
+          path="/auth"
+          element={<div data-testid="auth-page">auth</div>}
+        />
       </Routes>
     </MemoryRouter>
   );
 }
 
-describe("RBAC role matrix", () => {
+describe("RBAC role matrix (exhaustive, parsed from App.tsx)", () => {
   beforeEach(() => {
     state.insertHandler = null;
   });
 
-  for (const role of Object.keys(MATRIX) as Role[]) {
-    const { allowed, denied, home } = MATRIX[role];
+  it("parsed at least one protected route per role from App.tsx", () => {
+    expect(ALL_ROUTES.length).toBeGreaterThan(20);
+    for (const role of ALL_ROLES) {
+      const owned = ALL_ROUTES.filter((r) => r.allowedRoles.includes(role));
+      expect(owned.length, `role ${role} has zero routes`).toBeGreaterThan(0);
+    }
+  });
 
+  for (const role of ALL_ROLES) {
     describe(`role: ${role}`, () => {
       beforeEach(() => {
         state.currentRole = role;
         state.currentUser = { id: `${role}-uid` };
       });
 
-      for (const path of allowed) {
-        it(`ALLOW ${path} → renders page + NotificationBell`, async () => {
-          render(<MiniApp initialPath={path} />);
+      const allowed = ALL_ROUTES.filter((r) => r.allowedRoles.includes(role));
+      const denied = ALL_ROUTES.filter((r) => !r.allowedRoles.includes(role));
 
-          // Page content rendered for the requested path.
-          await waitFor(() => {
-            const el = screen.getByTestId("page-content");
-            expect(el.getAttribute("data-path")).toBe(path);
+      describe("ALLOW", () => {
+        for (const r of allowed) {
+          it(`${r.path} → renders + NotificationBell mounts`, async () => {
+            render(<MiniApp initialPath={r.path} />);
+
+            await waitFor(() => {
+              const el = screen.getByTestId("page-content");
+              expect(el.getAttribute("data-path")).toBe(r.path);
+            });
+
+            const bell = document.querySelector(
+              "button.relative.p-2.rounded-lg"
+            );
+            expect(bell).toBeTruthy();
+            await waitFor(() =>
+              expect(state.insertHandler).not.toBeNull()
+            );
           });
+        }
+      });
 
-          // NotificationBell mounted and subscribed for this signed-in user.
-          const bell = document.querySelector("button.relative.p-2.rounded-lg");
-          expect(bell).toBeTruthy();
-          await waitFor(() => expect(state.insertHandler).not.toBeNull());
-        });
-      }
+      describe("DENY", () => {
+        for (const r of denied) {
+          it(`${r.path} → blocked, redirected away`, async () => {
+            render(<MiniApp initialPath={r.path} />);
 
-      for (const path of denied) {
-        it(`DENY ${path} → redirected away (not rendered)`, async () => {
-          render(<MiniApp initialPath={path} />);
-
-          // The denied page must NOT render. ProtectedRoute redirects to the
-          // role's home; if home is in our mini-app routes, we'll see its
-          // page-content. Either way, the rendered path !== the denied path.
-          await waitFor(() => {
-            const el = screen.queryByTestId("page-content");
-            // Either nothing renders, or it renders the role's home — never
-            // the denied path.
-            if (el) {
-              expect(el.getAttribute("data-path")).not.toBe(path);
-              expect(el.getAttribute("data-path")).toBe(home);
-            } else {
-              expect(el).toBeNull();
-            }
+            await waitFor(() => {
+              const el = screen.queryByTestId("page-content");
+              if (el) {
+                // Must have been redirected to the role's home — never the
+                // denied path.
+                expect(el.getAttribute("data-path")).not.toBe(r.path);
+                expect(el.getAttribute("data-path")).toBe(ROLE_HOME[role]);
+              } else {
+                expect(el).toBeNull();
+              }
+            });
           });
-        });
-      }
+        }
+      });
     });
   }
 
@@ -211,8 +240,8 @@ describe("RBAC role matrix", () => {
 
     await waitFor(() => {
       expect(screen.queryByTestId("page-content")).toBeNull();
+      expect(screen.getByTestId("auth-page")).toBeInTheDocument();
     });
-    // Bell must not mount for an unauthenticated session.
     expect(
       document.querySelector("button.relative.p-2.rounded-lg")
     ).toBeNull();

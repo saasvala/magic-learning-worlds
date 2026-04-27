@@ -56,7 +56,7 @@ export default function AdminPermissionsMatrix() {
   }, []);
 
   const exportCsv = () => {
-    const header = ["Section", "Path", "Label", ...ALL_ROLES.map(ROLE_LABEL.bind(null))];
+    const header = ["Section", "Path", "Label", ...ALL_ROLES.map((r) => ROLE_LABEL[r])];
     const rows = ROUTE_ACCESS.map((r) => [
       r.section,
       r.path,

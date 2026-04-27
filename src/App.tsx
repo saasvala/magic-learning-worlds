@@ -40,6 +40,7 @@ import AdminAttendance from "./pages/AdminAttendance";
 import AdminFinance from "./pages/AdminFinance";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
+import AdminPermissionsMatrix from "./pages/AdminPermissionsMatrix";
 import CurriculumEditor from "./pages/CurriculumEditor";
 import LearningAnalytics from "./pages/LearningAnalytics";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -120,6 +121,7 @@ const App = () => (
             <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={["school_admin"]}><LearningAnalytics /></ProtectedRoute>} />
             <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminReports /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminSettings /></ProtectedRoute>} />
+            <Route path="/admin/permissions" element={<ProtectedRoute allowedRoles={["school_admin"]}><AdminPermissionsMatrix /></ProtectedRoute>} />
 
             {/* Super Admin Routes */}
             <Route path="/super-admin" element={<ProtectedRoute allowedRoles={["super_admin"]}><SuperAdminDashboard /></ProtectedRoute>} />

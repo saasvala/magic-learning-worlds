@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Layers, FileText,
-  CalendarCheck, DollarSign, BarChart3, Settings, LogOut, Brain, Edit
+  CalendarCheck, DollarSign, BarChart3, Settings, LogOut, Brain, Edit, Shield
 } from "lucide-react";
 
 const sidebarItems: SidebarItem[] = [
@@ -20,6 +20,7 @@ const sidebarItems: SidebarItem[] = [
   { title: "Analytics", url: "/admin/analytics", icon: Brain },
   { title: "Reports", url: "/admin/reports", icon: BarChart3 },
   { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Permissions", url: "/admin/permissions", icon: Shield },
   { title: "Logout", url: "/auth", icon: LogOut },
 ];
 

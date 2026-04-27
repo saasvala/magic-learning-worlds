@@ -99,6 +99,7 @@ const ROLES: { name: string; userId: string }[] = [
   { name: "Teacher", userId: "teacher-user-id" },
   { name: "School Admin", userId: "school-admin-user-id" },
   { name: "Super Admin", userId: "super-admin-user-id" },
+  { name: "Parent", userId: "parent-user-id" },
 ];
 
 describe("NotificationBell E2E (per role)", () => {

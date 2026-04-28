@@ -114,6 +114,34 @@ export default function AdminPermissionsMatrix() {
     return { allowed, denied };
   }, [drillRole]);
 
+  // ---- Reconcile (App.tsx ↔ ROUTE_ACCESS) ----
+  const reconcile = useMemo(() => diffRoutes(APP_SRC), []);
+  const reconcilePatch = useMemo(
+    () => renderRouteAccessPatch(reconcile.missingFromMap),
+    [reconcile.missingFromMap],
+  );
+  const reconcileCount =
+    reconcile.missingFromMap.length +
+    reconcile.staleInMap.length +
+    reconcile.roleMismatch.length;
+  const [copied, setCopied] = useState(false);
+
+  const copyPatch = async () => {
+    await navigator.clipboard.writeText(reconcilePatch);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const downloadPatch = () => {
+    const blob = new Blob([reconcilePatch], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rbac-route-access.patch.ts";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // ---- Exports ----
   const exportCsv = () => {
     const header = [

@@ -303,6 +303,14 @@ export default function AdminPermissionsMatrix() {
                 {SKIPPED_ROUTES.length}
               </Badge>
             </TabsTrigger>
+            <TabsTrigger value="reconcile">
+              Auto-Reconcile
+              {reconcileCount > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {reconcileCount}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
           {/* ---------- MATRIX ---------- */}

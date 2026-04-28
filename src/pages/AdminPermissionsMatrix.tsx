@@ -631,6 +631,185 @@ export default function AdminPermissionsMatrix() {
               </table>
             </div>
           </TabsContent>
+
+          {/* ---------- AUTO-RECONCILE ---------- */}
+          <TabsContent value="reconcile" className="space-y-4 mt-4">
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-border bg-muted/30 text-sm">
+              <Wand2 className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <p className="text-muted-foreground">
+                Live diff between <code className="text-xs">src/App.tsx</code>{" "}
+                and <code className="text-xs">ROUTE_ACCESS</code> in{" "}
+                <code className="text-xs">src/lib/rbac.ts</code>. The CI guard{" "}
+                <code className="text-xs">rbac-coverage-guard.test.ts</code>{" "}
+                fails the build whenever any of these counts is non-zero.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <StatCard
+                label="Missing from map"
+                value={reconcile.missingFromMap.length}
+              />
+              <StatCard
+                label="Stale in map"
+                value={reconcile.staleInMap.length}
+              />
+              <StatCard
+                label="Role mismatch"
+                value={reconcile.roleMismatch.length}
+              />
+            </div>
+
+            {reconcileCount === 0 && (
+              <div className="flex items-center gap-2 p-4 rounded-lg border border-primary/30 bg-primary/10 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>
+                  ROUTE_ACCESS is fully in sync with App.tsx. Nothing to
+                  reconcile.
+                </span>
+              </div>
+            )}
+
+            {reconcile.missingFromMap.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                  Missing from ROUTE_ACCESS ({reconcile.missingFromMap.length})
+                </h3>
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Path</th>
+                        <th className="text-left p-3 font-medium">
+                          Allowed roles (from App.tsx)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reconcile.missingFromMap.map((r) => (
+                        <tr
+                          key={r.path}
+                          className="border-t border-border hover:bg-muted/30"
+                        >
+                          <td className="p-3">
+                            <code className="text-xs">{r.path}</code>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex gap-1 flex-wrap">
+                              {r.allowedRoles.map((x) => (
+                                <Badge key={x} variant="secondary">
+                                  {ROLE_EMOJI[x as AppRole]}{" "}
+                                  {ROLE_LABEL[x as AppRole]}
+                                </Badge>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 mt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Suggested patch (paste into{" "}
+                    <code>src/lib/rbac.ts</code>):
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={copyPatch}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium hover:bg-muted transition"
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCheck className="w-3.5 h-3.5" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> Copy
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={downloadPatch}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium hover:bg-muted transition"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Download
+                    </button>
+                  </div>
+                </div>
+                <pre className="rounded-lg border border-border bg-muted/30 p-3 text-xs overflow-x-auto">
+                  <code>{reconcilePatch}</code>
+                </pre>
+              </section>
+            )}
+
+            {reconcile.staleInMap.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                  Stale entries in ROUTE_ACCESS ({reconcile.staleInMap.length})
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  These paths exist in <code>ROUTE_ACCESS</code> but no longer
+                  appear in <code>App.tsx</code>. Remove them.
+                </p>
+                <ul className="rounded-lg border border-border bg-card p-3 text-sm space-y-1">
+                  {reconcile.staleInMap.map((r) => (
+                    <li key={r.path}>
+                      <code className="text-xs">{r.path}</code>{" "}
+                      <span className="text-muted-foreground">
+                        — {r.label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {reconcile.roleMismatch.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                  allowedRoles mismatches ({reconcile.roleMismatch.length})
+                </h3>
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">Path</th>
+                        <th className="text-left p-3 font-medium">
+                          App.tsx
+                        </th>
+                        <th className="text-left p-3 font-medium">
+                          ROUTE_ACCESS
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reconcile.roleMismatch.map((m) => (
+                        <tr
+                          key={m.path}
+                          className="border-t border-border hover:bg-muted/30"
+                        >
+                          <td className="p-3">
+                            <code className="text-xs">{m.path}</code>
+                          </td>
+                          <td className="p-3 text-muted-foreground">
+                            [{m.appRoles.join(", ")}]
+                          </td>
+                          <td className="p-3 text-muted-foreground">
+                            [{m.mapRoles.join(", ")}]
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </AdminPageShell>

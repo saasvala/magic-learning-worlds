@@ -12,6 +12,9 @@ import {
   Ban,
   CheckCircle2,
   XCircle,
+  Wand2,
+  Copy,
+  CheckCheck,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -28,6 +31,12 @@ import {
   type AppRole,
   type RouteAccessDef,
 } from "@/lib/rbac";
+import {
+  diffRoutes,
+  renderRouteAccessPatch,
+} from "@/lib/rbacReconcile";
+// Vite ?raw — load App.tsx source at build time for live reconciliation.
+import APP_SRC from "@/App.tsx?raw";
 
 export default function AdminPermissionsMatrix() {
   const [query, setQuery] = useState("");

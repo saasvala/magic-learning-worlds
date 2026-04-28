@@ -1,14 +1,30 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, X, Search, Shield, AlertTriangle, Download } from "lucide-react";
+import {
+  Check,
+  X,
+  Search,
+  Shield,
+  AlertTriangle,
+  Download,
+  FileText,
+  FileSpreadsheet,
+  Ban,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { AdminPageShell } from "@/components/AdminPageShell";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   ALL_ROLES,
   ROLE_LABEL,
   ROLE_EMOJI,
   ROUTE_ACCESS,
+  SKIPPED_ROUTES,
   type AppRole,
   type RouteAccessDef,
 } from "@/lib/rbac";
@@ -17,6 +33,7 @@ export default function AdminPermissionsMatrix() {
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppRole | "all">("all");
 
+  // ---- Matrix tab data ----
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return ROUTE_ACCESS.filter((r) => {
@@ -55,26 +72,152 @@ export default function AdminPermissionsMatrix() {
     return { perRole, orphaned, shared, total: ROUTE_ACCESS.length };
   }, []);
 
+  // ---- Drilldown tab state ----
+  const [drillRole, setDrillRole] = useState<AppRole>("student");
+  const [drillQuery, setDrillQuery] = useState("");
+  const [drillView, setDrillView] = useState<"all" | "allowed" | "denied">(
+    "all",
+  );
+
+  const drilldown = useMemo(() => {
+    const q = drillQuery.trim().toLowerCase();
+    const rows = ROUTE_ACCESS.map((r) => ({
+      ...r,
+      allowed: r.allowedRoles.includes(drillRole),
+    }));
+    return rows.filter((r) => {
+      if (drillView === "allowed" && !r.allowed) return false;
+      if (drillView === "denied" && r.allowed) return false;
+      if (!q) return true;
+      return (
+        r.path.toLowerCase().includes(q) ||
+        r.label.toLowerCase().includes(q) ||
+        r.section.toLowerCase().includes(q)
+      );
+    });
+  }, [drillRole, drillQuery, drillView]);
+
+  const drillCounts = useMemo(() => {
+    const allowed = ROUTE_ACCESS.filter((r) =>
+      r.allowedRoles.includes(drillRole),
+    ).length;
+    const denied = ROUTE_ACCESS.length - allowed;
+    return { allowed, denied };
+  }, [drillRole]);
+
+  // ---- Exports ----
   const exportCsv = () => {
-    const header = ["Section", "Path", "Label", ...ALL_ROLES.map((r) => ROLE_LABEL[r])];
+    const header = [
+      "Section",
+      "Path",
+      "Label",
+      ...ALL_ROLES.map((r) => ROLE_LABEL[r]),
+    ];
     const rows = ROUTE_ACCESS.map((r) => [
       r.section,
       r.path,
       r.label,
       ...ALL_ROLES.map((role) =>
-        r.allowedRoles.includes(role) ? "ALLOW" : "DENY"
+        r.allowedRoles.includes(role) ? "ALLOW" : "DENY",
       ),
     ]);
-    const csv = [header, ...rows]
-      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+    const skipHeader = ["Skipped Path", "Reason"];
+    const skipRows = SKIPPED_ROUTES.map((s) => [s.path, s.reason]);
+    const csv = [
+      ["RBAC Permissions Matrix"],
+      header,
+      ...rows,
+      [],
+      ["Skipped Routes (not protected by RBAC)"],
+      skipHeader,
+      ...skipRows,
+    ]
+      .map((row) =>
+        row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","),
+      )
       .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "rbac-permissions-matrix.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    triggerDownload(csv, "rbac-coverage-report.csv", "text/csv");
+  };
+
+  const exportPdf = () => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt" });
+    const generated = new Date().toLocaleString();
+
+    doc.setFontSize(16);
+    doc.text("RBAC Coverage Report", 40, 40);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Generated: ${generated}`, 40, 56);
+    doc.setTextColor(0);
+
+    // Summary
+    doc.setFontSize(11);
+    doc.text("Summary", 40, 80);
+    autoTable(doc, {
+      startY: 88,
+      theme: "grid",
+      styles: { fontSize: 9 },
+      head: [["Metric", "Value"]],
+      body: [
+        ["Total protected routes", String(stats.total)],
+        ["Skipped routes (intentional)", String(SKIPPED_ROUTES.length)],
+        ["Orphaned routes (no role)", String(stats.orphaned.length)],
+        ["Shared routes (>1 role)", String(stats.shared.length)],
+        ...ALL_ROLES.map((r) => [
+          `${ROLE_LABEL[r]} accessible`,
+          `${stats.perRole[r]} (${((stats.perRole[r] / stats.total) * 100).toFixed(1)}%)`,
+        ]),
+      ],
+    });
+
+    // Matrix
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 20,
+      theme: "striped",
+      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [30, 30, 60] },
+      head: [
+        [
+          "Section",
+          "Page",
+          "Path",
+          ...ALL_ROLES.map((r) => ROLE_LABEL[r]),
+        ],
+      ],
+      body: ROUTE_ACCESS.map((r) => [
+        r.section,
+        r.label,
+        r.path,
+        ...ALL_ROLES.map((role) =>
+          r.allowedRoles.includes(role) ? "ALLOW" : "—",
+        ),
+      ]),
+      didDrawPage: () => {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `RBAC Coverage Report · page ${(doc as any).internal.getCurrentPageInfo().pageNumber} / ${pageCount}`,
+          40,
+          doc.internal.pageSize.getHeight() - 20,
+        );
+      },
+    });
+
+    // Skipped routes
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.setTextColor(0);
+    doc.text("Skipped Routes (not parsed by RBAC matrix)", 40, 40);
+    autoTable(doc, {
+      startY: 56,
+      theme: "grid",
+      styles: { fontSize: 9 },
+      head: [["Path", "Reason"]],
+      body: SKIPPED_ROUTES.map((s) => [s.path, s.reason]),
+    });
+
+    doc.save("rbac-coverage-report.pdf");
   };
 
   return (
@@ -95,12 +238,20 @@ export default function AdminPermissionsMatrix() {
               it. Source: <code className="text-xs">src/lib/rbac.ts</code>
             </p>
           </div>
-          <button
-            onClick={exportCsv}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
-          >
-            <Download className="w-4 h-4" /> Export CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportCsv}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-sm font-medium hover:bg-muted transition"
+            >
+              <FileSpreadsheet className="w-4 h-4" /> CSV
+            </button>
+            <button
+              onClick={exportPdf}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+            >
+              <FileText className="w-4 h-4" /> PDF
+            </button>
+          </div>
         </motion.div>
 
         {/* Stats */}
@@ -133,124 +284,322 @@ export default function AdminPermissionsMatrix() {
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[220px] max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search path, label, section..."
-              className="pl-9"
-            />
-          </div>
-          <div className="flex items-center gap-1 flex-wrap">
-            <FilterChip
-              active={roleFilter === "all"}
-              onClick={() => setRoleFilter("all")}
-              label="All roles"
-            />
-            {ALL_ROLES.map((r) => (
-              <FilterChip
-                key={r}
-                active={roleFilter === r}
-                onClick={() => setRoleFilter(r)}
-                label={`${ROLE_EMOJI[r]} ${ROLE_LABEL[r]}`}
-              />
-            ))}
-          </div>
-        </div>
+        <Tabs defaultValue="matrix" className="w-full">
+          <TabsList>
+            <TabsTrigger value="matrix">Full Matrix</TabsTrigger>
+            <TabsTrigger value="drilldown">Per-Role Drill-down</TabsTrigger>
+            <TabsTrigger value="skipped">
+              Skipped Routes
+              <Badge variant="secondary" className="ml-2">
+                {SKIPPED_ROUTES.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Matrix table */}
-        <div className="rounded-xl border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 sticky top-0">
-                <tr>
-                  <th className="text-left p-3 font-medium">Page</th>
-                  <th className="text-left p-3 font-medium">Path</th>
-                  {ALL_ROLES.map((r) => (
-                    <th
-                      key={r}
-                      className="text-center p-3 font-medium whitespace-nowrap"
-                    >
-                      {ROLE_EMOJI[r]} {ROLE_LABEL[r]}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {grouped.length === 0 && (
+          {/* ---------- MATRIX ---------- */}
+          <TabsContent value="matrix" className="space-y-4 mt-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search path, label, section..."
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-1 flex-wrap">
+                <FilterChip
+                  active={roleFilter === "all"}
+                  onClick={() => setRoleFilter("all")}
+                  label="All roles"
+                />
+                {ALL_ROLES.map((r) => (
+                  <FilterChip
+                    key={r}
+                    active={roleFilter === r}
+                    onClick={() => setRoleFilter(r)}
+                    label={`${ROLE_EMOJI[r]} ${ROLE_LABEL[r]}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="text-left p-3 font-medium">Page</th>
+                      <th className="text-left p-3 font-medium">Path</th>
+                      {ALL_ROLES.map((r) => (
+                        <th
+                          key={r}
+                          className="text-center p-3 font-medium whitespace-nowrap"
+                        >
+                          {ROLE_EMOJI[r]} {ROLE_LABEL[r]}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grouped.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={2 + ALL_ROLES.length}
+                          className="p-8 text-center text-muted-foreground"
+                        >
+                          No routes match your filters.
+                        </td>
+                      </tr>
+                    )}
+                    {grouped.map(([section, routes]) => (
+                      <>
+                        <tr key={`h-${section}`} className="bg-muted/20">
+                          <td
+                            colSpan={2 + ALL_ROLES.length}
+                            className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                          >
+                            {section}
+                            <Badge variant="secondary" className="ml-2">
+                              {routes.length}
+                            </Badge>
+                          </td>
+                        </tr>
+                        {routes.map((r) => (
+                          <tr
+                            key={r.path}
+                            className="border-t border-border hover:bg-muted/30 transition"
+                          >
+                            <td className="p-3 font-medium">{r.label}</td>
+                            <td className="p-3">
+                              <code className="text-xs text-muted-foreground">
+                                {r.path}
+                              </code>
+                            </td>
+                            {ALL_ROLES.map((role) => {
+                              const allowed = r.allowedRoles.includes(role);
+                              return (
+                                <td key={role} className="p-3 text-center">
+                                  {allowed ? (
+                                    <span
+                                      title={`${ROLE_LABEL[role]} can access`}
+                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </span>
+                                  ) : (
+                                    <span
+                                      title={`${ROLE_LABEL[role]} blocked`}
+                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground/50"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length} of {ROUTE_ACCESS.length} routes.
+            </p>
+          </TabsContent>
+
+          {/* ---------- DRILL-DOWN ---------- */}
+          <TabsContent value="drilldown" className="space-y-4 mt-4">
+            <div className="flex items-center gap-1 flex-wrap">
+              {ALL_ROLES.map((r) => (
+                <FilterChip
+                  key={r}
+                  active={drillRole === r}
+                  onClick={() => setDrillRole(r)}
+                  label={`${ROLE_EMOJI[r]} ${ROLE_LABEL[r]}`}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard
+                label="Total"
+                value={ROUTE_ACCESS.length}
+              />
+              <StatCard
+                label="✓ Allowed"
+                value={drillCounts.allowed}
+              />
+              <StatCard
+                label="✕ Denied"
+                value={drillCounts.denied}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-[220px] max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={drillQuery}
+                  onChange={(e) => setDrillQuery(e.target.value)}
+                  placeholder={`Search ${ROLE_LABEL[drillRole]} routes...`}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <FilterChip
+                  active={drillView === "all"}
+                  onClick={() => setDrillView("all")}
+                  label="All"
+                />
+                <FilterChip
+                  active={drillView === "allowed"}
+                  onClick={() => setDrillView("allowed")}
+                  label="Allowed"
+                />
+                <FilterChip
+                  active={drillView === "denied"}
+                  onClick={() => setDrillView("denied")}
+                  label="Denied"
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
                   <tr>
-                    <td
-                      colSpan={2 + ALL_ROLES.length}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      No routes match your filters.
-                    </td>
+                    <th className="text-left p-3 font-medium w-20">Status</th>
+                    <th className="text-left p-3 font-medium">Page</th>
+                    <th className="text-left p-3 font-medium">Path</th>
+                    <th className="text-left p-3 font-medium">Section</th>
+                    <th className="text-left p-3 font-medium">Other roles</th>
                   </tr>
-                )}
-                {grouped.map(([section, routes]) => (
-                  <>
-                    <tr key={`h-${section}`} className="bg-muted/20">
+                </thead>
+                <tbody>
+                  {drilldown.length === 0 && (
+                    <tr>
                       <td
-                        colSpan={2 + ALL_ROLES.length}
-                        className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                        colSpan={5}
+                        className="p-8 text-center text-muted-foreground"
                       >
-                        {section}
-                        <Badge variant="secondary" className="ml-2">
-                          {routes.length}
-                        </Badge>
+                        No routes match.
                       </td>
                     </tr>
-                    {routes.map((r) => (
-                      <tr
-                        key={r.path}
-                        className="border-t border-border hover:bg-muted/30 transition"
-                      >
-                        <td className="p-3 font-medium">{r.label}</td>
-                        <td className="p-3">
-                          <code className="text-xs text-muted-foreground">
-                            {r.path}
-                          </code>
-                        </td>
-                        {ALL_ROLES.map((role) => {
-                          const allowed = r.allowedRoles.includes(role);
-                          return (
-                            <td key={role} className="p-3 text-center">
-                              {allowed ? (
-                                <span
-                                  title={`${ROLE_LABEL[role]} can access`}
-                                  className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </span>
-                              ) : (
-                                <span
-                                  title={`${ROLE_LABEL[role]} blocked`}
-                                  className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground/50"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  )}
+                  {drilldown.map((r) => (
+                    <tr
+                      key={r.path}
+                      className="border-t border-border hover:bg-muted/30 transition"
+                    >
+                      <td className="p-3">
+                        {r.allowed ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                            <CheckCircle2 className="w-4 h-4" /> Allow
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                            <XCircle className="w-4 h-4" /> Deny
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 font-medium">{r.label}</td>
+                      <td className="p-3">
+                        <code className="text-xs text-muted-foreground">
+                          {r.path}
+                        </code>
+                      </td>
+                      <td className="p-3 text-muted-foreground">
+                        {r.section}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {r.allowedRoles
+                            .filter((x) => x !== drillRole)
+                            .map((x) => (
+                              <Badge key={x} variant="secondary">
+                                {ROLE_EMOJI[x]} {ROLE_LABEL[x]}
+                              </Badge>
+                            ))}
+                          {r.allowedRoles.filter((x) => x !== drillRole)
+                            .length === 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <p className="text-xs text-muted-foreground">
-          Showing {filtered.length} of {ROUTE_ACCESS.length} routes.
-        </p>
+            <p className="text-xs text-muted-foreground">
+              {ROLE_LABEL[drillRole]} can access {drillCounts.allowed} of{" "}
+              {ROUTE_ACCESS.length} protected routes (
+              {((drillCounts.allowed / ROUTE_ACCESS.length) * 100).toFixed(1)}%).
+            </p>
+          </TabsContent>
+
+          {/* ---------- SKIPPED ROUTES ---------- */}
+          <TabsContent value="skipped" className="space-y-4 mt-4">
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-border bg-muted/30 text-sm">
+              <Ban className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <p className="text-muted-foreground">
+                The RBAC matrix parser only matches routes wrapped in{" "}
+                <code className="text-xs">
+                  &lt;ProtectedRoute allowedRoles=&#123;[…]&#125;&gt;
+                </code>
+                . Routes below are declared in{" "}
+                <code className="text-xs">src/App.tsx</code> but{" "}
+                <strong>intentionally skipped</strong> — verify each is meant to
+                be public or unguarded.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left p-3 font-medium w-1/3">Path</th>
+                    <th className="text-left p-3 font-medium">Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SKIPPED_ROUTES.map((s) => (
+                    <tr
+                      key={s.path}
+                      className="border-t border-border hover:bg-muted/30 transition"
+                    >
+                      <td className="p-3">
+                        <code className="text-xs">{s.path}</code>
+                      </td>
+                      <td className="p-3 text-muted-foreground">{s.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminPageShell>
   );
+}
+
+function triggerDownload(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function StatCard({ label, value }: { label: string; value: number }) {

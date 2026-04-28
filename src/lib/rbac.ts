@@ -134,3 +134,20 @@ export const ROUTE_ACCESS: RouteAccessDef[] = [
   { path: "/parent/fees", label: "Fees", section: "Parent", allowedRoles: ["parent"] },
   { path: "/parent/alerts", label: "Alerts", section: "Parent", allowedRoles: ["parent"] },
 ];
+
+/**
+ * Routes declared in App.tsx but intentionally NOT picked up by the RBAC
+ * matrix parser (which only matches `<Route ... element={<ProtectedRoute
+ * allowedRoles={[…]}>`). Surfaced in the admin coverage UI so reviewers
+ * can confirm each skip is intentional.
+ */
+export interface SkippedRouteDef {
+  path: string;
+  reason: string;
+}
+
+export const SKIPPED_ROUTES: SkippedRouteDef[] = [
+  { path: "/", reason: "Public landing page (no auth required)" },
+  { path: "/auth", reason: "Public auth / sign-in page" },
+  { path: "*", reason: "Catch-all 404 (NotFound)" },
+];

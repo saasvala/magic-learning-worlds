@@ -719,7 +719,7 @@ export default function AdminPermissionsMatrix() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>

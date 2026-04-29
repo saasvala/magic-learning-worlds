@@ -582,63 +582,134 @@ export default function AdminPermissionsMatrix() {
                     <th className="text-left p-3 font-medium">Path</th>
                     <th className="text-left p-3 font-medium">Section</th>
                     <th className="text-left p-3 font-medium">Other roles</th>
+                    <th className="text-left p-3 font-medium w-32">View route</th>
                   </tr>
                 </thead>
                 <tbody>
                   {drilldown.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="p-8 text-center text-muted-foreground"
                       >
                         No routes match.
                       </td>
                     </tr>
                   )}
-                  {drilldown.map((r) => (
-                    <tr
-                      key={r.path}
-                      className="border-t border-border hover:bg-muted/30 transition"
-                    >
-                      <td className="p-3">
-                        {r.allowed ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                            <CheckCircle2 className="w-4 h-4" /> Allow
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                            <XCircle className="w-4 h-4" /> Deny
-                          </span>
+                  {drilldown.map((r) => {
+                    const breadcrumb = [
+                      r.section !== "—" ? r.section : null,
+                      r.label !== r.path ? r.label : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" › ") || r.path;
+                    const componentFile = r.component
+                      ? `src/pages/${r.component}.tsx`
+                      : null;
+                    const driftClass = r.drift
+                      ? "bg-destructive/10 hover:bg-destructive/15 border-l-2 border-l-destructive"
+                      : "hover:bg-muted/30";
+                    return (
+                      <>
+                        <tr
+                          key={r.path}
+                          className={`border-t border-border transition ${driftClass}`}
+                        >
+                          <td className="p-3">
+                            {r.allowed ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                <CheckCircle2 className="w-4 h-4" /> Allow
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                <XCircle className="w-4 h-4" /> Deny
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{r.label}</span>
+                              {r.drift && (
+                                <Badge
+                                  variant="destructive"
+                                  className="text-[10px] px-1.5 py-0"
+                                  title={r.drift.reason}
+                                >
+                                  {r.drift.kind === "missing-from-map"
+                                    ? "Parser only"
+                                    : r.drift.kind === "stale-in-map"
+                                    ? "UI only"
+                                    : "Role mismatch"}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <code className="text-xs text-muted-foreground">
+                              {r.path}
+                            </code>
+                          </td>
+                          <td className="p-3 text-muted-foreground">
+                            {r.section}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {r.allowedRoles
+                                .filter((x) => x !== drillRole)
+                                .map((x) => (
+                                  <Badge key={x} variant="secondary">
+                                    {ROLE_EMOJI[x]} {ROLE_LABEL[x]}
+                                  </Badge>
+                                ))}
+                              {r.allowedRoles.filter((x) => x !== drillRole)
+                                .length === 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <a
+                              href={r.path}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={
+                                componentFile
+                                  ? `Open ${r.path} · ${componentFile} · ${breadcrumb}`
+                                  : `Open ${r.path} · ${breadcrumb}`
+                              }
+                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              {r.component ?? "Open"}
+                            </a>
+                            <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                              {breadcrumb}
+                            </div>
+                          </td>
+                        </tr>
+                        {r.drift && (
+                          <tr
+                            key={`${r.path}-drift`}
+                            className="bg-destructive/5 border-l-2 border-l-destructive"
+                          >
+                            <td colSpan={6} className="px-3 pb-3 pt-0">
+                              <div className="flex items-start gap-2 text-xs text-destructive">
+                                <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                <span>
+                                  <strong className="font-semibold">
+                                    Discrepancy:
+                                  </strong>{" "}
+                                  {r.drift.reason}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="p-3 font-medium">{r.label}</td>
-                      <td className="p-3">
-                        <code className="text-xs text-muted-foreground">
-                          {r.path}
-                        </code>
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {r.section}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {r.allowedRoles
-                            .filter((x) => x !== drillRole)
-                            .map((x) => (
-                              <Badge key={x} variant="secondary">
-                                {ROLE_EMOJI[x]} {ROLE_LABEL[x]}
-                              </Badge>
-                            ))}
-                          {r.allowedRoles.filter((x) => x !== drillRole)
-                            .length === 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -647,6 +718,14 @@ export default function AdminPermissionsMatrix() {
               {ROLE_LABEL[drillRole]} can access {drillCounts.allowed} of{" "}
               {ROUTE_ACCESS.length} protected routes (
               {((drillCounts.allowed / ROUTE_ACCESS.length) * 100).toFixed(1)}%).
+              {drillCounts.drift > 0 && (
+                <>
+                  {" "}
+                  <span className="text-destructive font-medium">
+                    {drillCounts.drift} drift row(s) need attention.
+                  </span>
+                </>
+              )}
             </p>
           </TabsContent>
 

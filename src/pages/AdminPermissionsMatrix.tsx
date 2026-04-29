@@ -143,12 +143,12 @@ export default function AdminPermissionsMatrix() {
       };
     });
     // Parser-only rows (in App.tsx but missing from ROUTE_ACCESS).
-    const parserOnly = parsedRoutes
+    const parserOnly: DrillRow[] = parsedRoutes
       .filter((p) => !mapPaths.has(p.path))
       .map((p) => ({
         path: p.path,
         label: p.path,
-        section: "—" as RouteAccessDef["section"] | "—",
+        section: "—",
         allowedRoles: p.allowedRoles,
         allowed: p.allowedRoles.includes(drillRole),
         inParser: true,
@@ -156,7 +156,7 @@ export default function AdminPermissionsMatrix() {
           kind: "missing-from-map",
           reason:
             "Found in App.tsx as a protected route but missing from ROUTE_ACCESS — UI matrix is incomplete.",
-        } as { kind: string; reason: string } | null,
+        },
         component: componentByPath[p.path],
       }));
 

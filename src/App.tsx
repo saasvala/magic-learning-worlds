@@ -154,6 +154,7 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </RbacOverrideProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

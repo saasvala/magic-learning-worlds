@@ -846,6 +846,104 @@ export default function AdminPermissionsMatrix() {
               />
             </div>
 
+            {/* Apply patch controls */}
+            <div className="flex items-center justify-between gap-3 flex-wrap p-3 rounded-lg border border-border bg-card">
+              <div className="text-sm">
+                <div className="font-medium flex items-center gap-2">
+                  Apply patch to live matrix
+                  {hasOverride && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Session override active
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Merges {reconcile.missingFromMap.length} new + updates{" "}
+                  {reconcile.roleMismatch.length} mismatched route(s) into
+                  ROUTE_ACCESS for this admin session only. Source files are
+                  not modified — refresh to revert.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasOverride && (
+                  <button
+                    onClick={handleResetOverrides}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs font-medium hover:bg-muted transition"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Reset
+                  </button>
+                )}
+                <button
+                  onClick={handleApplyPatch}
+                  disabled={
+                    reconcile.missingFromMap.length === 0 &&
+                    reconcile.roleMismatch.length === 0
+                  }
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                    confirmApply
+                      ? "bg-destructive text-destructive-foreground hover:opacity-90"
+                      : "bg-primary text-primary-foreground hover:opacity-90"
+                  }`}
+                >
+                  <Wand2 className="w-4 h-4" />
+                  {confirmApply ? "Click again to confirm" : "Apply patch"}
+                </button>
+              </div>
+            </div>
+
+            {/* Audit log */}
+            {audit.length > 0 && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <History className="w-4 h-4 text-muted-foreground" />
+                  Session audit log ({audit.length})
+                </h3>
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">When</th>
+                        <th className="text-left p-3 font-medium">Actor</th>
+                        <th className="text-left p-3 font-medium">Added</th>
+                        <th className="text-left p-3 font-medium">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {audit.map((e) => (
+                        <tr key={e.id} className="border-t border-border">
+                          <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(e.at).toLocaleString()}
+                          </td>
+                          <td className="p-3 text-xs">
+                            <code>{e.actor}</code>
+                          </td>
+                          <td className="p-3 text-xs">
+                            {e.added.length === 0 ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : (
+                              <span className="text-primary">
+                                {e.added.length} route(s)
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-xs">
+                            {e.updated.includes("__reset__") ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                Reset to file
+                              </Badge>
+                            ) : e.updated.length === 0 ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : (
+                              <span>{e.updated.length} route(s)</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
             {reconcileCount === 0 && (
               <div className="flex items-center gap-2 p-4 rounded-lg border border-primary/30 bg-primary/10 text-sm">
                 <CheckCircle2 className="w-4 h-4 text-primary" />

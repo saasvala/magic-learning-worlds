@@ -77,6 +77,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <RbacOverrideProvider>
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />

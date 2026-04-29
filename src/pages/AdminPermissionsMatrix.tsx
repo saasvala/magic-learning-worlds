@@ -33,10 +33,13 @@ import {
 } from "@/lib/rbac";
 import {
   diffRoutes,
+  parseProtectedRoutes,
+  parseRouteComponents,
   renderRouteAccessPatch,
 } from "@/lib/rbacReconcile";
 // Vite ?raw — load App.tsx source at build time for live reconciliation.
 import APP_SRC from "@/App.tsx?raw";
+import { ExternalLink, AlertCircle } from "lucide-react";
 
 export default function AdminPermissionsMatrix() {
   const [query, setQuery] = useState("");

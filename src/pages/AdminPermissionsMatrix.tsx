@@ -623,9 +623,8 @@ export default function AdminPermissionsMatrix() {
                       ? "bg-destructive/10 hover:bg-destructive/15 border-l-2 border-l-destructive"
                       : "hover:bg-muted/30";
                     return (
-                      <>
+                      <Fragment key={r.path}>
                         <tr
-                          key={r.path}
                           className={`border-t border-border transition ${driftClass}`}
                         >
                           <td className="p-3">

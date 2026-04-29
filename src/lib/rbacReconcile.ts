@@ -21,6 +21,20 @@ const PROTECTED_RE =
 
 const ANY_ROUTE_RE = /<Route\s+path="([^"]+)"/g;
 
+/** Extract the wrapped component name for each protected route in App.tsx. */
+const PROTECTED_WITH_COMPONENT_RE =
+  /<Route\s+path="([^"]+)"\s+element=\{<ProtectedRoute\s+allowedRoles=\{\[[^\]]+\]\}>\s*<([A-Za-z0-9_]+)\s*\/?>/g;
+
+export function parseRouteComponents(src: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  let m: RegExpExecArray | null;
+  PROTECTED_WITH_COMPONENT_RE.lastIndex = 0;
+  while ((m = PROTECTED_WITH_COMPONENT_RE.exec(src)) !== null) {
+    out[m[1]] = m[2];
+  }
+  return out;
+}
+
 export function parseProtectedRoutes(src: string): ParsedProtectedRoute[] {
   const out: ParsedProtectedRoute[] = [];
   let m: RegExpExecArray | null;

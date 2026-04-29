@@ -525,7 +525,7 @@ export default function AdminPermissionsMatrix() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard
                 label="Total"
                 value={ROUTE_ACCESS.length}
@@ -537,6 +537,10 @@ export default function AdminPermissionsMatrix() {
               <StatCard
                 label="✕ Denied"
                 value={drillCounts.denied}
+              />
+              <StatCard
+                label="⚠ Drift"
+                value={drillCounts.drift}
               />
             </div>
 

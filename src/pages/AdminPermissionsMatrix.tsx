@@ -218,6 +218,34 @@ export default function AdminPermissionsMatrix() {
     URL.revokeObjectURL(url);
   };
 
+  const [confirmApply, setConfirmApply] = useState(false);
+  const handleApplyPatch = () => {
+    if (!confirmApply) {
+      setConfirmApply(true);
+      setTimeout(() => setConfirmApply(false), 4000);
+      return;
+    }
+    setConfirmApply(false);
+    const actor = user?.email ?? user?.id ?? "unknown-admin";
+    const entry = applyPatch(
+      reconcile.missingFromMap,
+      reconcile.roleMismatch.map((m) => ({ path: m.path, appRoles: m.appRoles })),
+      actor,
+    );
+    toast({
+      title: "Patch applied to live matrix",
+      description: `${entry.added.length} added · ${entry.updated.length} updated. Session-only override.`,
+    });
+  };
+
+  const handleResetOverrides = () => {
+    reset();
+    toast({
+      title: "Session overrides cleared",
+      description: "Matrix restored to file-defined ROUTE_ACCESS.",
+    });
+  };
+
   // ---- Exports ----
   const exportCsv = () => {
     const header = [

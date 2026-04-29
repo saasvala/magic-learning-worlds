@@ -187,8 +187,11 @@ export default function AdminPermissionsMatrix() {
     return { allowed, denied, drift };
   }, [drillRole, drilldown]);
 
-  // ---- Reconcile (App.tsx ↔ ROUTE_ACCESS) ----
-  const reconcile = useMemo(() => diffRoutes(APP_SRC), []);
+  // ---- Reconcile (App.tsx ↔ effective ROUTE_ACCESS) ----
+  const reconcile = useMemo(
+    () => diffRoutes(APP_SRC, ROUTE_ACCESS),
+    [ROUTE_ACCESS],
+  );
   const reconcilePatch = useMemo(
     () => renderRouteAccessPatch(reconcile.missingFromMap),
     [reconcile.missingFromMap],

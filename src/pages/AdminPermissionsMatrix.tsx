@@ -26,7 +26,7 @@ import {
   ALL_ROLES,
   ROLE_LABEL,
   ROLE_EMOJI,
-  ROUTE_ACCESS,
+  ROUTE_ACCESS as ROUTE_ACCESS_BASE,
   SKIPPED_ROUTES,
   type AppRole,
   type RouteAccessDef,
@@ -39,9 +39,15 @@ import {
 } from "@/lib/rbacReconcile";
 // Vite ?raw — load App.tsx source at build time for live reconciliation.
 import APP_SRC from "@/App.tsx?raw";
-import { ExternalLink, AlertCircle } from "lucide-react";
+import { ExternalLink, AlertCircle, RefreshCw, History } from "lucide-react";
+import { useRbacOverrides } from "@/contexts/RbacOverrideContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminPermissionsMatrix() {
+  const { effective: ROUTE_ACCESS, hasOverride, audit, applyPatch, reset } =
+    useRbacOverrides();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppRole | "all">("all");
 

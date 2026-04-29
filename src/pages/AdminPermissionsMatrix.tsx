@@ -135,7 +135,7 @@ export default function AdminPermissionsMatrix() {
       .map((p) => ({
         path: p.path,
         label: p.path,
-        section: "—" as RouteAccessDef["section"],
+        section: "—" as RouteAccessDef["section"] | "—",
         allowedRoles: p.allowedRoles,
         allowed: p.allowedRoles.includes(drillRole),
         inParser: true,

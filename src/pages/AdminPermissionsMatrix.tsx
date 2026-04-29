@@ -91,13 +91,63 @@ export default function AdminPermissionsMatrix() {
     "all",
   );
 
+  // Parsed App.tsx data (source of truth for "what the runtime actually does").
+  const parsedRoutes = useMemo(() => parseProtectedRoutes(APP_SRC), []);
+  const parsedByPath = useMemo(() => {
+    const map = new Map<string, AppRole[]>();
+    for (const r of parsedRoutes) map.set(r.path, r.allowedRoles);
+    return map;
+  }, [parsedRoutes]);
+  const componentByPath = useMemo(() => parseRouteComponents(APP_SRC), []);
+
   const drilldown = useMemo(() => {
     const q = drillQuery.trim().toLowerCase();
-    const rows = ROUTE_ACCESS.map((r) => ({
-      ...r,
-      allowed: r.allowedRoles.includes(drillRole),
-    }));
-    return rows.filter((r) => {
+    const mapPaths = new Set(ROUTE_ACCESS.map((r) => r.path));
+    // UI-side rows (from ROUTE_ACCESS).
+    const uiRows = ROUTE_ACCESS.map((r) => {
+      const parserRoles = parsedByPath.get(r.path);
+      const uiAllowed = r.allowedRoles.includes(drillRole);
+      const parserAllowed = parserRoles?.includes(drillRole) ?? false;
+      const inParser = parserRoles !== undefined;
+      let drift: null | { kind: string; reason: string } = null;
+      if (!inParser) {
+        drift = {
+          kind: "stale-in-map",
+          reason: "Listed in ROUTE_ACCESS but not found as a protected route in App.tsx.",
+        };
+      } else if (uiAllowed !== parserAllowed) {
+        drift = {
+          kind: "role-mismatch",
+          reason: `Matrix says ${uiAllowed ? "Allow" : "Deny"} for ${ROLE_LABEL[drillRole]}, but App.tsx says ${parserAllowed ? "Allow" : "Deny"}.`,
+        };
+      }
+      return {
+        ...r,
+        allowed: uiAllowed,
+        inParser,
+        drift,
+        component: componentByPath[r.path],
+      };
+    });
+    // Parser-only rows (in App.tsx but missing from ROUTE_ACCESS).
+    const parserOnly = parsedRoutes
+      .filter((p) => !mapPaths.has(p.path))
+      .map((p) => ({
+        path: p.path,
+        label: p.path,
+        section: "—" as RouteAccessDef["section"],
+        allowedRoles: p.allowedRoles,
+        allowed: p.allowedRoles.includes(drillRole),
+        inParser: true,
+        drift: {
+          kind: "missing-from-map",
+          reason:
+            "Found in App.tsx as a protected route but missing from ROUTE_ACCESS — UI matrix is incomplete.",
+        } as { kind: string; reason: string } | null,
+        component: componentByPath[p.path],
+      }));
+
+    return [...uiRows, ...parserOnly].filter((r) => {
       if (drillView === "allowed" && !r.allowed) return false;
       if (drillView === "denied" && r.allowed) return false;
       if (!q) return true;
@@ -107,15 +157,16 @@ export default function AdminPermissionsMatrix() {
         r.section.toLowerCase().includes(q)
       );
     });
-  }, [drillRole, drillQuery, drillView]);
+  }, [drillRole, drillQuery, drillView, parsedRoutes, parsedByPath, componentByPath]);
 
   const drillCounts = useMemo(() => {
     const allowed = ROUTE_ACCESS.filter((r) =>
       r.allowedRoles.includes(drillRole),
     ).length;
     const denied = ROUTE_ACCESS.length - allowed;
-    return { allowed, denied };
-  }, [drillRole]);
+    const drift = drilldown.filter((r) => r.drift).length;
+    return { allowed, denied, drift };
+  }, [drillRole, drilldown]);
 
   // ---- Reconcile (App.tsx ↔ ROUTE_ACCESS) ----
   const reconcile = useMemo(() => diffRoutes(APP_SRC), []);

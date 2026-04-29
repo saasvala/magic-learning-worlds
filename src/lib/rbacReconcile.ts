@@ -72,11 +72,14 @@ export interface RouteDiff {
   skippedDeclaredRoutes: string[];
 }
 
-export function diffRoutes(src: string): RouteDiff {
+export function diffRoutes(
+  src: string,
+  map: RouteAccessDef[] = ROUTE_ACCESS,
+): RouteDiff {
   const protectedRoutes = parseProtectedRoutes(src);
   const allDeclared = parseAllRoutePaths(src);
   const protectedPathSet = new Set(protectedRoutes.map((r) => r.path));
-  const mapByPath = new Map(ROUTE_ACCESS.map((r) => [r.path, r]));
+  const mapByPath = new Map(map.map((r) => [r.path, r]));
 
   const missingFromMap: ParsedProtectedRoute[] = [];
   const roleMismatch: RouteDiff["roleMismatch"] = [];
@@ -98,7 +101,7 @@ export function diffRoutes(src: string): RouteDiff {
     }
   }
 
-  const staleInMap = ROUTE_ACCESS.filter((r) => !protectedPathSet.has(r.path));
+  const staleInMap = map.filter((r) => !protectedPathSet.has(r.path));
   const skippedDeclaredRoutes = allDeclared.filter(
     (p) => !protectedPathSet.has(p),
   );

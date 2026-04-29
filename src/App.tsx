@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RbacOverrideProvider } from "@/contexts/RbacOverrideContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Pages
@@ -76,6 +77,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <RbacOverrideProvider>
           <Routes>
             {/* Public */}
             <Route path="/" element={<LandingPage />} />
@@ -152,6 +154,7 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </RbacOverrideProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -33,10 +33,13 @@ import {
 } from "@/lib/rbac";
 import {
   diffRoutes,
+  parseProtectedRoutes,
+  parseRouteComponents,
   renderRouteAccessPatch,
 } from "@/lib/rbacReconcile";
 // Vite ?raw — load App.tsx source at build time for live reconciliation.
 import APP_SRC from "@/App.tsx?raw";
+import { ExternalLink, AlertCircle } from "lucide-react";
 
 export default function AdminPermissionsMatrix() {
   const [query, setQuery] = useState("");
@@ -88,13 +91,76 @@ export default function AdminPermissionsMatrix() {
     "all",
   );
 
+  // Parsed App.tsx data (source of truth for "what the runtime actually does").
+  const parsedRoutes = useMemo(() => parseProtectedRoutes(APP_SRC), []);
+  const parsedByPath = useMemo(() => {
+    const map = new Map<string, AppRole[]>();
+    for (const r of parsedRoutes) map.set(r.path, r.allowedRoles);
+    return map;
+  }, [parsedRoutes]);
+  const componentByPath = useMemo(() => parseRouteComponents(APP_SRC), []);
+
   const drilldown = useMemo(() => {
     const q = drillQuery.trim().toLowerCase();
-    const rows = ROUTE_ACCESS.map((r) => ({
-      ...r,
-      allowed: r.allowedRoles.includes(drillRole),
-    }));
-    return rows.filter((r) => {
+    const mapPaths = new Set(ROUTE_ACCESS.map((r) => r.path));
+    type DrillRow = {
+      path: string;
+      label: string;
+      section: string;
+      allowedRoles: AppRole[];
+      allowed: boolean;
+      inParser: boolean;
+      drift: { kind: string; reason: string } | null;
+      component?: string;
+    };
+    // UI-side rows (from ROUTE_ACCESS).
+    const uiRows: DrillRow[] = ROUTE_ACCESS.map((r) => {
+      const parserRoles = parsedByPath.get(r.path);
+      const uiAllowed = r.allowedRoles.includes(drillRole);
+      const parserAllowed = parserRoles?.includes(drillRole) ?? false;
+      const inParser = parserRoles !== undefined;
+      let drift: { kind: string; reason: string } | null = null;
+      if (!inParser) {
+        drift = {
+          kind: "stale-in-map",
+          reason: "Listed in ROUTE_ACCESS but not found as a protected route in App.tsx.",
+        };
+      } else if (uiAllowed !== parserAllowed) {
+        drift = {
+          kind: "role-mismatch",
+          reason: `Matrix says ${uiAllowed ? "Allow" : "Deny"} for ${ROLE_LABEL[drillRole]}, but App.tsx says ${parserAllowed ? "Allow" : "Deny"}.`,
+        };
+      }
+      return {
+        path: r.path,
+        label: r.label,
+        section: r.section,
+        allowedRoles: r.allowedRoles,
+        allowed: uiAllowed,
+        inParser,
+        drift,
+        component: componentByPath[r.path],
+      };
+    });
+    // Parser-only rows (in App.tsx but missing from ROUTE_ACCESS).
+    const parserOnly: DrillRow[] = parsedRoutes
+      .filter((p) => !mapPaths.has(p.path))
+      .map((p) => ({
+        path: p.path,
+        label: p.path,
+        section: "—",
+        allowedRoles: p.allowedRoles,
+        allowed: p.allowedRoles.includes(drillRole),
+        inParser: true,
+        drift: {
+          kind: "missing-from-map",
+          reason:
+            "Found in App.tsx as a protected route but missing from ROUTE_ACCESS — UI matrix is incomplete.",
+        },
+        component: componentByPath[p.path],
+      }));
+
+    return [...uiRows, ...parserOnly].filter((r) => {
       if (drillView === "allowed" && !r.allowed) return false;
       if (drillView === "denied" && r.allowed) return false;
       if (!q) return true;
@@ -104,15 +170,16 @@ export default function AdminPermissionsMatrix() {
         r.section.toLowerCase().includes(q)
       );
     });
-  }, [drillRole, drillQuery, drillView]);
+  }, [drillRole, drillQuery, drillView, parsedRoutes, parsedByPath, componentByPath]);
 
   const drillCounts = useMemo(() => {
     const allowed = ROUTE_ACCESS.filter((r) =>
       r.allowedRoles.includes(drillRole),
     ).length;
     const denied = ROUTE_ACCESS.length - allowed;
-    return { allowed, denied };
-  }, [drillRole]);
+    const drift = drilldown.filter((r) => r.drift).length;
+    return { allowed, denied, drift };
+  }, [drillRole, drilldown]);
 
   // ---- Reconcile (App.tsx ↔ ROUTE_ACCESS) ----
   const reconcile = useMemo(() => diffRoutes(APP_SRC), []);
@@ -471,7 +538,7 @@ export default function AdminPermissionsMatrix() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard
                 label="Total"
                 value={ROUTE_ACCESS.length}
@@ -483,6 +550,10 @@ export default function AdminPermissionsMatrix() {
               <StatCard
                 label="✕ Denied"
                 value={drillCounts.denied}
+              />
+              <StatCard
+                label="⚠ Drift"
+                value={drillCounts.drift}
               />
             </div>
 
@@ -524,63 +595,133 @@ export default function AdminPermissionsMatrix() {
                     <th className="text-left p-3 font-medium">Path</th>
                     <th className="text-left p-3 font-medium">Section</th>
                     <th className="text-left p-3 font-medium">Other roles</th>
+                    <th className="text-left p-3 font-medium w-32">View route</th>
                   </tr>
                 </thead>
                 <tbody>
                   {drilldown.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="p-8 text-center text-muted-foreground"
                       >
                         No routes match.
                       </td>
                     </tr>
                   )}
-                  {drilldown.map((r) => (
-                    <tr
-                      key={r.path}
-                      className="border-t border-border hover:bg-muted/30 transition"
-                    >
-                      <td className="p-3">
-                        {r.allowed ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                            <CheckCircle2 className="w-4 h-4" /> Allow
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                            <XCircle className="w-4 h-4" /> Deny
-                          </span>
+                  {drilldown.map((r) => {
+                    const breadcrumb = [
+                      r.section !== "—" ? r.section : null,
+                      r.label !== r.path ? r.label : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" › ") || r.path;
+                    const componentFile = r.component
+                      ? `src/pages/${r.component}.tsx`
+                      : null;
+                    const driftClass = r.drift
+                      ? "bg-destructive/10 hover:bg-destructive/15 border-l-2 border-l-destructive"
+                      : "hover:bg-muted/30";
+                    return (
+                      <Fragment key={r.path}>
+                        <tr
+                          className={`border-t border-border transition ${driftClass}`}
+                        >
+                          <td className="p-3">
+                            {r.allowed ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                <CheckCircle2 className="w-4 h-4" /> Allow
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                <XCircle className="w-4 h-4" /> Deny
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{r.label}</span>
+                              {r.drift && (
+                                <Badge
+                                  variant="destructive"
+                                  className="text-[10px] px-1.5 py-0"
+                                  title={r.drift.reason}
+                                >
+                                  {r.drift.kind === "missing-from-map"
+                                    ? "Parser only"
+                                    : r.drift.kind === "stale-in-map"
+                                    ? "UI only"
+                                    : "Role mismatch"}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <code className="text-xs text-muted-foreground">
+                              {r.path}
+                            </code>
+                          </td>
+                          <td className="p-3 text-muted-foreground">
+                            {r.section}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {r.allowedRoles
+                                .filter((x) => x !== drillRole)
+                                .map((x) => (
+                                  <Badge key={x} variant="secondary">
+                                    {ROLE_EMOJI[x]} {ROLE_LABEL[x]}
+                                  </Badge>
+                                ))}
+                              {r.allowedRoles.filter((x) => x !== drillRole)
+                                .length === 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <a
+                              href={r.path}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={
+                                componentFile
+                                  ? `Open ${r.path} · ${componentFile} · ${breadcrumb}`
+                                  : `Open ${r.path} · ${breadcrumb}`
+                              }
+                              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              {r.component ?? "Open"}
+                            </a>
+                            <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                              {breadcrumb}
+                            </div>
+                          </td>
+                        </tr>
+                        {r.drift && (
+                          <tr
+                            key={`${r.path}-drift`}
+                            className="bg-destructive/5 border-l-2 border-l-destructive"
+                          >
+                            <td colSpan={6} className="px-3 pb-3 pt-0">
+                              <div className="flex items-start gap-2 text-xs text-destructive">
+                                <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                <span>
+                                  <strong className="font-semibold">
+                                    Discrepancy:
+                                  </strong>{" "}
+                                  {r.drift.reason}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="p-3 font-medium">{r.label}</td>
-                      <td className="p-3">
-                        <code className="text-xs text-muted-foreground">
-                          {r.path}
-                        </code>
-                      </td>
-                      <td className="p-3 text-muted-foreground">
-                        {r.section}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {r.allowedRoles
-                            .filter((x) => x !== drillRole)
-                            .map((x) => (
-                              <Badge key={x} variant="secondary">
-                                {ROLE_EMOJI[x]} {ROLE_LABEL[x]}
-                              </Badge>
-                            ))}
-                          {r.allowedRoles.filter((x) => x !== drillRole)
-                            .length === 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -589,6 +730,14 @@ export default function AdminPermissionsMatrix() {
               {ROLE_LABEL[drillRole]} can access {drillCounts.allowed} of{" "}
               {ROUTE_ACCESS.length} protected routes (
               {((drillCounts.allowed / ROUTE_ACCESS.length) * 100).toFixed(1)}%).
+              {drillCounts.drift > 0 && (
+                <>
+                  {" "}
+                  <span className="text-destructive font-medium">
+                    {drillCounts.drift} drift row(s) need attention.
+                  </span>
+                </>
+              )}
             </p>
           </TabsContent>
 

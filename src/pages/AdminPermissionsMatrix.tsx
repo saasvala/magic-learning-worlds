@@ -103,13 +103,23 @@ export default function AdminPermissionsMatrix() {
   const drilldown = useMemo(() => {
     const q = drillQuery.trim().toLowerCase();
     const mapPaths = new Set(ROUTE_ACCESS.map((r) => r.path));
+    type DrillRow = {
+      path: string;
+      label: string;
+      section: string;
+      allowedRoles: AppRole[];
+      allowed: boolean;
+      inParser: boolean;
+      drift: { kind: string; reason: string } | null;
+      component?: string;
+    };
     // UI-side rows (from ROUTE_ACCESS).
-    const uiRows = ROUTE_ACCESS.map((r) => {
+    const uiRows: DrillRow[] = ROUTE_ACCESS.map((r) => {
       const parserRoles = parsedByPath.get(r.path);
       const uiAllowed = r.allowedRoles.includes(drillRole);
       const parserAllowed = parserRoles?.includes(drillRole) ?? false;
       const inParser = parserRoles !== undefined;
-      let drift: null | { kind: string; reason: string } = null;
+      let drift: { kind: string; reason: string } | null = null;
       if (!inParser) {
         drift = {
           kind: "stale-in-map",
@@ -122,7 +132,10 @@ export default function AdminPermissionsMatrix() {
         };
       }
       return {
-        ...r,
+        path: r.path,
+        label: r.label,
+        section: r.section,
+        allowedRoles: r.allowedRoles,
         allowed: uiAllowed,
         inParser,
         drift,

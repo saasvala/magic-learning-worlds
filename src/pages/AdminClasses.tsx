@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Layers, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { LoadingState, EmptyState, ErrorState } from "@/components/states";
 import type { Tables } from "@/integrations/supabase/types";
 
 const GRADE_OPTIONS = [
@@ -92,7 +93,7 @@ function AdminClassesPage() {
 
   const schoolId = profile?.school_id || "";
 
-  const { data: classes = [], isLoading } = useQuery({
+  const { data: classes = [], isLoading, error, refetch } = useQuery({
     queryKey: ["admin-classes", schoolId],
     queryFn: async () => {
       const query = supabase.from("classes").select("*").order("grade").order("name");
@@ -194,12 +195,19 @@ function AdminClassesPage() {
 
         <div className="glass rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="p-12 text-center text-muted-foreground">Loading classes...</div>
+            <LoadingState message="Loading classes..." />
+          ) : error ? (
+            <ErrorState
+              title="Couldn't load classes"
+              description="There was a problem fetching the class list."
+              onRetry={() => refetch()}
+            />
           ) : filtered.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <Layers className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p>No classes yet. Create one to get started.</p>
-            </div>
+            <EmptyState
+              icon={<Layers className="w-7 h-7 text-muted-foreground" />}
+              title="No classes yet"
+              description={search ? "No classes match your search." : "Create your first class to get started."}
+            />
           ) : (
             <Table>
               <TableHeader>

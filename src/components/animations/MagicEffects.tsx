@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { forwardRef } from "react";
 
 const stars = Array.from({ length: 30 }, (_, i) => ({
   id: i,
@@ -50,13 +50,23 @@ export const XPBurst = ({ show }: { show: boolean }) => {
   );
 };
 
-export const GlowOrb = ({ color = "primary", size = 200, className = "" }: { color?: string; size?: number; className?: string }) => (
-  <div
-    className={`absolute rounded-full blur-3xl opacity-20 pointer-events-none ${className}`}
-    style={{
-      width: size,
-      height: size,
-      background: color === "primary" ? "hsl(42 100% 58%)" : color === "purple" ? "hsl(270 80% 65%)" : "hsl(210 90% 55%)",
-    }}
-  />
+type GlowOrbProps = { color?: string; size?: number; className?: string };
+export const GlowOrb = forwardRef<HTMLDivElement, GlowOrbProps>(
+  ({ color = "primary", size = 200, className = "" }, ref) => (
+    <div
+      ref={ref}
+      className={`absolute rounded-full blur-3xl opacity-20 pointer-events-none ${className}`}
+      style={{
+        width: size,
+        height: size,
+        background:
+          color === "primary"
+            ? "hsl(42 100% 58%)"
+            : color === "purple"
+              ? "hsl(270 80% 65%)"
+              : "hsl(210 90% 55%)",
+      }}
+    />
+  ),
 );
+GlowOrb.displayName = "GlowOrb";

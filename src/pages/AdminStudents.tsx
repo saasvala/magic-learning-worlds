@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Users, Plus, Pencil, Trash2, Search, GraduationCap } from "lucide-react";
+import { LoadingState, EmptyState, ErrorState } from "@/components/states";
 
 const GRADE_OPTIONS = [
   { value: "lkg", label: "LKG" }, { value: "ukg", label: "UKG" },
@@ -87,7 +88,7 @@ function AdminStudentsPage() {
 
   const schoolId = profile?.school_id;
 
-  const { data: students = [], isLoading } = useQuery({
+  const { data: students = [], isLoading, error, refetch } = useQuery({
     queryKey: ["admin-students", schoolId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -145,12 +146,19 @@ function AdminStudentsPage() {
 
         <div className="glass rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="p-12 text-center text-muted-foreground">Loading students...</div>
+            <LoadingState message="Loading students..." />
+          ) : error ? (
+            <ErrorState
+              title="Couldn't load students"
+              description="There was a problem fetching the student list."
+              onRetry={() => refetch()}
+            />
           ) : filtered.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <GraduationCap className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p>No students found</p>
-            </div>
+            <EmptyState
+              icon={<GraduationCap className="w-7 h-7 text-muted-foreground" />}
+              title="No students found"
+              description={search ? "Try adjusting your search query." : "Add your first student to get started."}
+            />
           ) : (
             <Table>
               <TableHeader>

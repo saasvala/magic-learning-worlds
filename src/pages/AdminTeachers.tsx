@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { GraduationCap, Pencil, Search } from "lucide-react";
+import { LoadingState, EmptyState, ErrorState } from "@/components/states";
 
 type TeacherProfile = {
   id: string;
@@ -50,7 +51,7 @@ function AdminTeachersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TeacherProfile | null>(null);
 
-  const { data: teachers = [], isLoading } = useQuery({
+  const { data: teachers = [], isLoading, error, refetch } = useQuery({
     queryKey: ["admin-teachers"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -106,12 +107,19 @@ function AdminTeachersPage() {
 
         <div className="glass rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="p-12 text-center text-muted-foreground">Loading teachers...</div>
+            <LoadingState message="Loading teachers..." />
+          ) : error ? (
+            <ErrorState
+              title="Couldn't load teachers"
+              description="There was a problem fetching the teacher list."
+              onRetry={() => refetch()}
+            />
           ) : filtered.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <GraduationCap className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p>No teachers found</p>
-            </div>
+            <EmptyState
+              icon={<GraduationCap className="w-7 h-7 text-muted-foreground" />}
+              title="No teachers found"
+              description={search ? "Try a different search term." : "Invite your first teacher to get started."}
+            />
           ) : (
             <Table>
               <TableHeader>

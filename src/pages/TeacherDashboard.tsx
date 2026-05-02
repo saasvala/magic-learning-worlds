@@ -245,7 +245,7 @@ function TeacherHome() {
 
         <motion.button
           whileHover={{ scale: 1.03 }}
-          onClick={() => navigate("/teacher/quiz-builder")}
+          onClick={() => navigate("/teacher/exams")}
           className="mt-6 flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-magic text-secondary-foreground font-semibold shadow-glow-purple"
         >
           <Plus className="w-4 h-4" /> Quick Create Quiz

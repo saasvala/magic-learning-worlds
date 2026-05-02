@@ -5,12 +5,11 @@ import {
 } from "lucide-react";
 import { TeacherPageShell } from "@/components/TeacherPageShell";
 import { useAuth } from "@/contexts/AuthContext";
-
-const classPerformance = [
-  { name: "Grade 5 - Section A", students: 42, avgScore: 85, trend: "+3%" },
-  { name: "Grade 5 - Section B", students: 38, avgScore: 78, trend: "+1%" },
-  { name: "Grade 4 - Section A", students: 40, avgScore: 82, trend: "+5%" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DemoBadge } from "@/components/states/DemoBadge";
+import { useNavigate } from "react-router-dom";
 
 const pendingTasks = [
   { title: "Grade assignments for Ch. 4 Quiz", due: "Today", urgent: true },
@@ -25,15 +24,124 @@ const weakTopics = [
   { topic: "Ecosystems", subject: "Science", class: "Grade 4-A", score: 68 },
 ];
 
-const recentSubmissions = [
-  { student: "Ana M.", assignment: "Math Worksheet 7", status: "submitted", time: "10m ago" },
-  { student: "Carlos R.", assignment: "Science Report", status: "late", time: "2h ago" },
-  { student: "Bea L.", assignment: "English Essay", status: "submitted", time: "3h ago" },
-  { student: "Diego S.", assignment: "Math Worksheet 7", status: "submitted", time: "5h ago" },
-];
+function useTeacherStats(teacherId: string | undefined) {
+  return useQuery({
+    enabled: !!teacherId,
+    queryKey: ["teacher-dashboard-stats", teacherId],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+
+      // Teacher's classes
+      const { data: classesData } = await supabase
+        .from("classes")
+        .select("id, name")
+        .eq("teacher_id", teacherId!);
+
+      const classIds = (classesData || []).map((c: any) => c.id);
+
+      // Students enrolled in those classes
+      let studentCount = 0;
+      if (classIds.length) {
+        const { count } = await supabase
+          .from("class_enrollments")
+          .select("student_id", { count: "exact", head: true })
+          .in("class_id", classIds);
+        studentCount = count ?? 0;
+      }
+
+      // Today's attendance for those classes
+      let attendancePct: number | null = null;
+      if (classIds.length) {
+        const { data: att } = await supabase
+          .from("attendance")
+          .select("status")
+          .eq("date", today)
+          .in("class_id", classIds);
+        const total = (att || []).length;
+        const present = (att || []).filter((r: any) => r.status === "present").length;
+        attendancePct = total > 0 ? Math.round((present / total) * 100) : null;
+      }
+
+      // Pending submissions
+      let pendingCount = 0;
+      if (classIds.length) {
+        const { data: assignments } = await supabase
+          .from("assignments")
+          .select("id")
+          .in("class_id", classIds);
+        const aIds = (assignments || []).map((a: any) => a.id);
+        if (aIds.length) {
+          const { count } = await supabase
+            .from("assignment_submissions")
+            .select("id", { count: "exact", head: true })
+            .in("assignment_id", aIds)
+            .eq("status", "pending");
+          pendingCount = count ?? 0;
+        }
+      }
+
+      // Recent submissions
+      let recentSubmissions: Array<{ student: string; assignment: string; status: string; time: string }> = [];
+      if (classIds.length) {
+        const { data: assignments } = await supabase
+          .from("assignments")
+          .select("id, title")
+          .in("class_id", classIds);
+        const aIds = (assignments || []).map((a: any) => a.id);
+        const aMap = Object.fromEntries((assignments || []).map((a: any) => [a.id, a.title]));
+        if (aIds.length) {
+          const { data: subs } = await supabase
+            .from("assignment_submissions")
+            .select("id, assignment_id, student_id, status, submitted_at")
+            .in("assignment_id", aIds)
+            .order("submitted_at", { ascending: false })
+            .limit(5);
+          const sIds = Array.from(new Set((subs || []).map((s: any) => s.student_id)));
+          let nameMap: Record<string, string> = {};
+          if (sIds.length) {
+            const { data: profs } = await supabase
+              .from("profiles")
+              .select("id, full_name")
+              .in("id", sIds);
+            nameMap = Object.fromEntries((profs || []).map((p: any) => [p.id, p.full_name]));
+          }
+          recentSubmissions = (subs || []).map((s: any) => ({
+            student: nameMap[s.student_id] || "Student",
+            assignment: aMap[s.assignment_id] || "Assignment",
+            status: s.status,
+            time: s.submitted_at ? new Date(s.submitted_at).toLocaleString() : "",
+          }));
+        }
+      }
+
+      return {
+        classCount: classIds.length,
+        studentCount,
+        attendancePct,
+        pendingCount,
+        recentSubmissions,
+        classes: classesData || [],
+      };
+    },
+  });
+}
+
+function StatCard({
+  label, value, icon: Icon, color, loading,
+}: { label: string; value: string | number; icon: any; color: string; loading?: boolean }) {
+  return (
+    <div className="glass rounded-xl p-5">
+      <Icon className={`w-5 h-5 ${color} mb-2`} />
+      {loading ? <Skeleton className="h-7 w-16 mb-1" /> : <div className="text-2xl font-bold">{value}</div>}
+      <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
 
 function TeacherHome() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { data, isLoading } = useTeacherStats(profile?.id);
 
   return (
     <div className="p-6">
@@ -42,41 +150,43 @@ function TeacherHome() {
         <p className="text-muted-foreground text-sm mb-6">Here's your overview for today.</p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Students", value: "120", icon: Users, color: "text-magic-blue" },
-            { label: "Pending Tasks", value: "4", icon: Clock, color: "text-streak-orange" },
-            { label: "Avg. Performance", value: "82%", icon: TrendingUp, color: "text-xp-green" },
-            { label: "Attendance Today", value: "96%", icon: CalendarCheck, color: "text-primary" },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass rounded-xl p-5">
-              <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-              <div className="text-2xl font-bold">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
-            </motion.div>
-          ))}
+          <StatCard label="Total Students" value={data?.studentCount ?? 0} icon={Users} color="text-magic-blue" loading={isLoading} />
+          <StatCard label="Pending Tasks" value={data?.pendingCount ?? 0} icon={Clock} color="text-streak-orange" loading={isLoading} />
+          <StatCard label="Avg. Performance" value="—" icon={TrendingUp} color="text-xp-green" />
+          <StatCard
+            label="Attendance Today"
+            value={data?.attendancePct != null ? `${data.attendancePct}%` : "—"}
+            icon={CalendarCheck}
+            color="text-primary"
+            loading={isLoading}
+          />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           <div className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> Class Performance</h3>
+            <h3 className="font-semibold mb-4 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /> My Classes</h3>
             <div className="space-y-3">
-              {classPerformance.map((c) => (
-                <div key={c.name} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.students} students</div>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)
+              ) : (data?.classes || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No classes assigned yet.</p>
+              ) : (
+                data!.classes.map((c: any) => (
+                  <div key={c.id} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{c.name}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold">{c.avgScore}%</div>
-                    <div className="text-xs text-xp-green">{c.trend}</div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-4 flex items-center gap-2"><Clock className="w-4 h-4 text-streak-orange" /> Pending Tasks</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2"><Clock className="w-4 h-4 text-streak-orange" /> Pending Tasks</h3>
+              <DemoBadge />
+            </div>
             <div className="space-y-2">
               {pendingTasks.map((t, i) => (
                 <div key={i} className={`flex items-center gap-3 p-2.5 rounded-lg ${t.urgent ? "bg-destructive/10" : "bg-muted/30"}`}>
@@ -93,7 +203,10 @@ function TeacherHome() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="glass rounded-xl p-5">
-            <h3 className="font-semibold mb-4 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-streak-orange" /> Weak Topic Alerts</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-streak-orange" /> Weak Topic Alerts</h3>
+              <DemoBadge />
+            </div>
             <div className="space-y-2">
               {weakTopics.map((t) => (
                 <div key={t.topic} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
@@ -110,21 +223,31 @@ function TeacherHome() {
           <div className="glass rounded-xl p-5">
             <h3 className="font-semibold mb-4 flex items-center gap-2"><FileText className="w-4 h-4 text-magic-blue" /> Recent Submissions</h3>
             <div className="space-y-2">
-              {recentSubmissions.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold">{s.student[0]}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{s.student} — {s.assignment}</div>
-                    <div className="text-xs text-muted-foreground">{s.time}</div>
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-lg" />)
+              ) : (data?.recentSubmissions || []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No submissions yet.</p>
+              ) : (
+                data!.recentSubmissions.map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30">
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold">{s.student[0]}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm truncate">{s.student} — {s.assignment}</div>
+                      <div className="text-xs text-muted-foreground">{s.time}</div>
+                    </div>
+                    {s.status !== "pending" ? <CheckCircle2 className="w-4 h-4 text-xp-green shrink-0" /> : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
                   </div>
-                  {s.status === "submitted" ? <CheckCircle2 className="w-4 h-4 text-xp-green shrink-0" /> : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
 
-        <motion.button whileHover={{ scale: 1.03 }} className="mt-6 flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-magic text-secondary-foreground font-semibold shadow-glow-purple">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          onClick={() => navigate("/teacher/exams")}
+          className="mt-6 flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-magic text-secondary-foreground font-semibold shadow-glow-purple"
+        >
           <Plus className="w-4 h-4" /> Quick Create Quiz
         </motion.button>
       </motion.div>

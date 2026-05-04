@@ -1,17 +1,53 @@
 import { motion } from "framer-motion";
-import { DollarSign, TrendingUp, CreditCard, Receipt, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, Receipt, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { AdminPageShell } from "@/components/AdminPageShell";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const transactions = [
-  { id: 1, desc: "Tuition Payment - Maria Santos", amount: 15000, type: "income", date: "Mar 1", method: "GCash" },
-  { id: 2, desc: "Lab Equipment Purchase", amount: -8500, type: "expense", date: "Feb 28", method: "Bank Transfer" },
-  { id: 3, desc: "Tuition Payment - Juan Dela Cruz", amount: 15000, type: "income", date: "Feb 27", method: "Bank Transfer" },
-  { id: 4, desc: "Teacher Salary - February", amount: -450000, type: "expense", date: "Feb 25", method: "Payroll" },
-  { id: 5, desc: "Facility Maintenance", amount: -12000, type: "expense", date: "Feb 24", method: "Cash" },
-  { id: 6, desc: "Tuition Payment - Bea Reyes", amount: 12000, type: "income", date: "Feb 23", method: "Maya" },
-];
+interface Payment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method: string | null;
+  description: string | null;
+  paid_at: string | null;
+  created_at: string;
+}
+
+function formatCurrency(n: number, currency = "PHP") {
+  try { return new Intl.NumberFormat("en-PH", { style: "currency", currency, maximumFractionDigits: 0 }).format(n); }
+  catch { return `₱${Math.round(n).toLocaleString()}`; }
+}
 
 function AdminFinancePage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-finance"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Payment[];
+    },
+  });
+
+  const payments = data ?? [];
+  const collected = payments.filter(p => p.status === "completed" || p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const pending = payments.filter(p => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+  const total = collected + pending;
+  const collectedPct = total ? Math.round((collected / total) * 100) : 0;
+  const pendingPct = total ? Math.round((pending / total) * 100) : 0;
+
+  const stats = [
+    { label: "Total Revenue", value: formatCurrency(total), change: `${payments.length} txns`, icon: TrendingUp, color: "text-xp-green" },
+    { label: "Collected Fees", value: formatCurrency(collected), change: `${collectedPct}%`, icon: CreditCard, color: "text-primary" },
+    { label: "Pending Fees", value: formatCurrency(pending), change: `${pendingPct}%`, icon: Receipt, color: "text-streak-orange" },
+    { label: "Transactions", value: String(payments.length), change: "last 200", icon: ArrowDownRight, color: "text-magic-blue" },
+  ];
+
   return (
     <div className="p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -19,45 +55,55 @@ function AdminFinancePage() {
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center"><DollarSign className="w-5 h-5 text-primary" /></div>
           <div>
             <h1 className="text-2xl font-bold">Finance</h1>
-            <p className="text-muted-foreground text-sm">Track fees, payments, and expenses</p>
+            <p className="text-muted-foreground text-sm">Track fees, payments, and collections</p>
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: "Total Revenue", value: "₱2.4M", change: "+12%", icon: TrendingUp, color: "text-xp-green" },
-            { label: "Collected Fees", value: "₱1.8M", change: "75%", icon: CreditCard, color: "text-primary" },
-            { label: "Pending Fees", value: "₱600K", change: "25%", icon: Receipt, color: "text-streak-orange" },
-            { label: "Expenses", value: "₱1.1M", change: "+5%", icon: ArrowDownRight, color: "text-destructive" },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="glass rounded-xl p-4">
-              <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-              <div className="text-xl font-bold">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
-              <div className={`text-[10px] ${s.color} mt-1`}>{s.change}</div>
-            </motion.div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {stats.map((s, i) => (
+                <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="glass rounded-xl p-4">
+                  <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
+                  <div className="text-xl font-bold">{s.value}</div>
+                  <div className="text-xs text-muted-foreground">{s.label}</div>
+                  <div className={`text-[10px] ${s.color} mt-1`}>{s.change}</div>
+                </motion.div>
+              ))}
+            </div>
 
-        <div className="glass rounded-xl p-5">
-          <h3 className="font-semibold mb-4">Recent Transactions</h3>
-          <div className="space-y-2">
-            {transactions.map((t, i) => (
-              <motion.div key={t.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.type === "income" ? "bg-xp-green/20" : "bg-destructive/20"}`}>
-                  {t.type === "income" ? <ArrowUpRight className="w-4 h-4 text-xp-green" /> : <ArrowDownRight className="w-4 h-4 text-destructive" />}
+            <div className="glass rounded-xl p-5">
+              <h3 className="font-semibold mb-4">Recent Transactions</h3>
+              {payments.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-6">No transactions yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {payments.slice(0, 20).map((t, i) => {
+                    const isIncome = t.status === "completed" || t.status === "paid";
+                    return (
+                      <motion.div key={t.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isIncome ? "bg-xp-green/20" : "bg-streak-orange/20"}`}>
+                          {isIncome ? <ArrowUpRight className="w-4 h-4 text-xp-green" /> : <ArrowDownRight className="w-4 h-4 text-streak-orange" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{t.description ?? "Payment"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(t.paid_at ?? t.created_at).toLocaleDateString()} • {t.payment_method ?? "—"} • <span className="capitalize">{t.status}</span>
+                          </div>
+                        </div>
+                        <span className={`text-sm font-bold ${isIncome ? "text-xp-green" : "text-streak-orange"}`}>
+                          {formatCurrency(Number(t.amount), t.currency)}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{t.desc}</div>
-                  <div className="text-xs text-muted-foreground">{t.date} • {t.method}</div>
-                </div>
-                <span className={`text-sm font-bold ${t.type === "income" ? "text-xp-green" : "text-destructive"}`}>
-                  {t.type === "income" ? "+" : ""}₱{Math.abs(t.amount).toLocaleString()}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+              )}
+            </div>
+          </>
+        )}
       </motion.div>
     </div>
   );

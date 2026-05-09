@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ParentPageShell } from "@/components/ParentPageShell";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import { DemoBadge } from "@/components/states/DemoBadge";
 
 const conversations = [
   { teacher: "Ms. Reyes", subject: "Math", lastMsg: "Maria is doing great in algebra! She scored 92% on the last test.", time: "2h ago", unread: 2, avatar: "R" },

@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { MessageSquare, Send, Search, User } from "lucide-react";
+import { MessageSquare, Send, Search } from "lucide-react";
 import { TeacherPageShell } from "@/components/TeacherPageShell";
 import { useState } from "react";
+import { DemoBadge } from "@/components/states/DemoBadge";
 
 const conversations = [
   { id: 1, name: "Maria Santos (Parent)", lastMsg: "Thank you for the update on Maria's progress!", time: "10m", unread: 0 },

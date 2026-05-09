@@ -1,27 +1,50 @@
 import { motion } from "framer-motion";
-import { Swords, Shield, Crown, Lock, Clock, Zap, Trophy, ChevronRight } from "lucide-react";
+import { Swords, Shield, Clock, Zap, Trophy } from "lucide-react";
 import { StudentPageShell } from "@/components/StudentPageShell";
 import { FloatingStars } from "@/components/animations/MagicEffects";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { LoadingState, EmptyState, ErrorState } from "@/components/states";
 
-const exams = [
-  { id: 1, title: "Diagnostic Test: English Proficiency", type: "diagnostic", subject: "English", status: "completed", score: 88, total: 100, emoji: "🎯" },
-  { id: 2, title: "Chapter Quiz: Fractions & Decimals", type: "practice_quiz", subject: "Mathematics", status: "available", duration: 15, questions: 10, emoji: "⚡" },
-  { id: 3, title: "Chapter Test: Parts of Speech", type: "chapter_test", subject: "English", status: "available", duration: 30, questions: 25, emoji: "⚔️" },
-  { id: 4, title: "Monthly Test: Science Feb 2026", type: "monthly_test", subject: "Science", status: "upcoming", date: "Mar 10", emoji: "📋" },
-  { id: 5, title: "Quarterly Exam: Mathematics Q1", type: "quarterly_exam", subject: "Mathematics", status: "upcoming", date: "Mar 25", emoji: "🏰" },
-  { id: 6, title: "BOSS BATTLE: Filipino Mastery", type: "boss_battle", subject: "Filipino", status: "locked", requirement: "Complete all chapters", emoji: "🐉" },
-];
-
-const typeLabels: Record<string, { label: string; color: string }> = {
-  diagnostic: { label: "🎯 Diagnostic", color: "text-magic-blue" },
-  practice_quiz: { label: "⚡ Quick Battle", color: "text-primary" },
-  chapter_test: { label: "⚔️ Chapter Battle", color: "text-magic-purple" },
-  monthly_test: { label: "📋 Monthly Siege", color: "text-streak-orange" },
-  quarterly_exam: { label: "🏰 Castle Raid", color: "text-coral" },
-  boss_battle: { label: "🐉 Boss Fight", color: "text-destructive" },
+const typeLabels: Record<string, { label: string; color: string; emoji: string }> = {
+  diagnostic: { label: "Diagnostic", color: "text-magic-blue", emoji: "🎯" },
+  practice_quiz: { label: "Quick Battle", color: "text-primary", emoji: "⚡" },
+  chapter_test: { label: "Chapter Battle", color: "text-magic-purple", emoji: "⚔️" },
+  monthly_test: { label: "Monthly Siege", color: "text-streak-orange", emoji: "📋" },
+  quarterly_exam: { label: "Castle Raid", color: "text-coral", emoji: "🏰" },
+  boss_battle: { label: "Boss Fight", color: "text-destructive", emoji: "🐉" },
 };
 
 function ExamsPage() {
+  const { user } = useAuth();
+
+  const { data, isLoading, error, refetch } = useQuery({
+    enabled: !!user?.id,
+    queryKey: ["student-exams", user?.id],
+    queryFn: async () => {
+      const [{ data: exams }, { data: results }] = await Promise.all([
+        supabase.from("exams").select("*").eq("is_published", true).order("starts_at", { ascending: true }),
+        supabase.from("results").select("*").eq("student_id", user!.id),
+      ]);
+      return { exams: exams || [], results: results || [] };
+    },
+  });
+
+  const now = Date.now();
+  const items = (data?.exams ?? []).map((e: any) => {
+    const result = (data?.results ?? []).find((r: any) => r.exam_id === e.id);
+    let status: "completed" | "available" | "upcoming" = "available";
+    if (result) status = "completed";
+    else if (e.starts_at && new Date(e.starts_at).getTime() > now) status = "upcoming";
+    return { ...e, status, percentage: result?.percentage };
+  });
+
+  const won = items.filter((i) => i.status === "completed").length;
+  const winRate = won
+    ? Math.round(((data?.results ?? []).filter((r: any) => r.passed).length / won) * 100)
+    : 0;
+
   return (
     <div className="p-6 relative">
       <FloatingStars />
@@ -38,9 +61,9 @@ function ExamsPage() {
 
         <div className="grid sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: "Battles Won", value: "12", icon: Trophy, color: "text-primary" },
-            { label: "Win Rate", value: "85%", icon: Shield, color: "text-xp-green" },
-            { label: "Total XP Earned", value: "2,450", icon: Zap, color: "text-magic-purple" },
+            { label: "Battles Won", value: String(won), icon: Trophy, color: "text-primary" },
+            { label: "Win Rate", value: `${winRate}%`, icon: Shield, color: "text-xp-green" },
+            { label: "Available Now", value: String(items.filter((i) => i.status === "available").length), icon: Zap, color: "text-magic-purple" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }} className="glass rounded-xl p-4 text-center">
               <s.icon className={`w-5 h-5 ${s.color} mx-auto mb-2`} />
@@ -50,57 +73,63 @@ function ExamsPage() {
           ))}
         </div>
 
-        <div className="space-y-3">
-          {exams.map((e, i) => {
-            const tl = typeLabels[e.type];
-            return (
-              <motion.div
-                key={e.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={e.status !== "locked" ? { scale: 1.01, y: -2 } : {}}
-                className={`glass rounded-xl p-4 flex items-center gap-4 ${
-                  e.status === "locked" ? "opacity-40" :
-                  e.status === "available" ? "ring-1 ring-primary/40 shadow-glow-gold" :
-                  e.type === "boss_battle" ? "ring-1 ring-destructive/30" : ""
-                }`}
-              >
-                <div className="text-3xl">{e.emoji}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold">{e.title}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-medium ${tl.color}`}>{tl.label}</span>
-                    <span className="text-[10px] text-muted-foreground">• {e.subject}</span>
+        {isLoading ? (
+          <LoadingState variant="skeleton" rows={5} />
+        ) : error ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : items.length === 0 ? (
+          <EmptyState title="No battles scheduled" description="Your teacher hasn't published any exams yet." />
+        ) : (
+          <div className="space-y-3">
+            {items.map((e: any, i: number) => {
+              const tl = typeLabels[e.exam_type] || { label: e.exam_type, color: "text-muted-foreground", emoji: "📝" };
+              return (
+                <motion.div
+                  key={e.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  className={`glass rounded-xl p-4 flex items-center gap-4 ${
+                    e.status === "available" ? "ring-1 ring-primary/40 shadow-glow-gold" :
+                    e.exam_type === "boss_battle" ? "ring-1 ring-destructive/30" : ""
+                  }`}
+                >
+                  <div className="text-3xl">{tl.emoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold truncate">{e.title}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[10px] font-medium ${tl.color}`}>{tl.label}</span>
+                      <span className="text-[10px] text-muted-foreground">• {e.total_marks} marks</span>
+                    </div>
+                    {e.status === "available" && (
+                      <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{e.duration_minutes} min</span>
+                      </div>
+                    )}
+                    {e.status === "upcoming" && e.starts_at && (
+                      <div className="text-[10px] text-streak-orange mt-1">📅 Starts: {new Date(e.starts_at).toLocaleDateString()}</div>
+                    )}
                   </div>
-                  {e.status === "available" && (
-                    <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{e.duration} min</span>
-                      <span>{e.questions} questions</span>
-                    </div>
-                  )}
-                  {e.status === "upcoming" && <div className="text-[10px] text-streak-orange mt-1">📅 Scheduled: {e.date}</div>}
-                  {e.status === "locked" && <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1"><Lock className="w-3 h-3" />{e.requirement}</div>}
-                </div>
-                <div className="shrink-0 text-right">
-                  {e.status === "completed" && (
-                    <div>
-                      <div className="text-lg font-bold text-xp-green">{e.score}%</div>
-                      <div className="text-[10px] text-muted-foreground">Score</div>
-                    </div>
-                  )}
-                  {e.status === "available" && (
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="px-4 py-2 rounded-xl bg-gradient-gold text-primary-foreground text-xs font-bold shadow-glow-gold flex items-center gap-1">
-                      <Swords className="w-3 h-3" /> Fight!
-                    </motion.button>
-                  )}
-                  {e.status === "upcoming" && <Clock className="w-5 h-5 text-streak-orange" />}
-                  {e.status === "locked" && <Lock className="w-5 h-5 text-muted-foreground" />}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                  <div className="shrink-0 text-right">
+                    {e.status === "completed" && (
+                      <div>
+                        <div className="text-lg font-bold text-xp-green">{Math.round(Number(e.percentage ?? 0))}%</div>
+                        <div className="text-[10px] text-muted-foreground">Score</div>
+                      </div>
+                    )}
+                    {e.status === "available" && (
+                      <button className="px-4 py-2 rounded-xl bg-gradient-gold text-primary-foreground text-xs font-bold shadow-glow-gold flex items-center gap-1">
+                        <Swords className="w-3 h-3" /> Fight!
+                      </button>
+                    )}
+                    {e.status === "upcoming" && <Clock className="w-5 h-5 text-streak-orange" />}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </motion.div>
     </div>
   );

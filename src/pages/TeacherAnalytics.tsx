@@ -36,8 +36,8 @@ function AnalyticsPage() {
           <div className="w-10 h-10 rounded-xl bg-gradient-magic flex items-center justify-center">
             <BarChart3 className="w-5 h-5 text-secondary-foreground" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">Analytics</h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-2"><h1 className="text-2xl font-bold">Analytics</h1><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">Student performance insights across all classes</p>
           </div>
         </div>

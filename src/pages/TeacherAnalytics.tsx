@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, TrendingDown, Users, Target, Award } from "lucide-react";
 import { TeacherPageShell } from "@/components/TeacherPageShell";
+import { DemoBadge } from "@/components/states/DemoBadge";
 
 const subjectStats = [
   { subject: "English", emoji: "📖", avg: 82, trend: "+5%", highest: 98, lowest: 45 },

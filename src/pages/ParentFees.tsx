@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ParentPageShell } from "@/components/ParentPageShell";
 import { CreditCard, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { DemoBadge } from "@/components/states/DemoBadge";
 
 const fees = [
   { description: "Tuition Fee - Q3 2026", amount: "₱15,000", status: "paid", date: "Jan 15, 2026", method: "GCash" },

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { Crown, Medal, Trophy, Flame, Star, TrendingUp, TrendingDown } from "lucide-react";
 import { StudentPageShell } from "@/components/StudentPageShell";
 import { FloatingStars } from "@/components/animations/MagicEffects";
@@ -34,6 +35,7 @@ function LeaderboardPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Hall of Champions</h1>
+            <div className="mt-1"><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">Your rank: <span className="text-primary font-bold">#{myRank}</span> • Keep climbing!</p>
           </div>
         </div>

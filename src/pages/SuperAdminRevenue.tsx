@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { DollarSign, TrendingUp, ArrowUpRight, BarChart3, CreditCard } from "lucide-react";
 import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
 
@@ -21,6 +22,7 @@ function RevenuePage() {
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center"><DollarSign className="w-5 h-5 text-primary" /></div>
           <div>
             <h1 className="text-2xl font-bold">Revenue</h1>
+            <div className="mt-1"><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">Platform financial analytics</p>
           </div>
         </div>

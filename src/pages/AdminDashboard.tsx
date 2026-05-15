@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  Users, GraduationCap, TrendingUp, UserCheck, Search, Bell
-} from "lucide-react";
+import { Users, GraduationCap, TrendingUp, UserCheck } from "lucide-react";
 import { AdminPageShell } from "@/components/AdminPageShell";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { ShieldCheck, AlertTriangle, Eye, Lock, Search } from "lucide-react";
 import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
 
@@ -22,6 +23,7 @@ function SecurityPage() {
             <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center"><ShieldCheck className="w-5 h-5 text-destructive" /></div>
             <div>
               <h1 className="text-2xl font-bold">Security Logs</h1>
+            <div className="mt-1"><DemoBadge /></div>
               <p className="text-muted-foreground text-sm">Monitor security events and access patterns</p>
             </div>
           </div>

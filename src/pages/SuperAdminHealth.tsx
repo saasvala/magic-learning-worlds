@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { Activity, CheckCircle2, AlertCircle, Server, Cpu, HardDrive, Wifi } from "lucide-react";
 import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
 
@@ -27,6 +28,7 @@ function HealthPage() {
           <div className="w-10 h-10 rounded-xl bg-xp-green/20 flex items-center justify-center"><Activity className="w-5 h-5 text-xp-green" /></div>
           <div>
             <h1 className="text-2xl font-bold">System Health</h1>
+            <div className="mt-1"><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">Real-time monitoring and performance metrics</p>
           </div>
         </div>

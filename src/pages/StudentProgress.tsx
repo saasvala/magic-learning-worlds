@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { BarChart3, TrendingUp, Clock, Star, Trophy, BookOpen, Target, Flame } from "lucide-react";
 import { StudentPageShell } from "@/components/StudentPageShell";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ function ProgressPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Progress Report</h1>
+            <div className="mt-1"><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">Your learning journey at a glance</p>
           </div>
         </div>

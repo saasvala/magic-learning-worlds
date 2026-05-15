@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { Database, Download, Clock, CheckCircle2, Play, Calendar } from "lucide-react";
 import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
 
@@ -19,6 +20,7 @@ function BackupPage() {
             <div className="w-10 h-10 rounded-xl bg-magic-blue/20 flex items-center justify-center"><Database className="w-5 h-5 text-magic-blue" /></div>
             <div>
               <h1 className="text-2xl font-bold">Backup & Recovery</h1>
+            <div className="mt-1"><DemoBadge /></div>
               <p className="text-muted-foreground text-sm">Manage database backups and restoration points</p>
             </div>
           </div>

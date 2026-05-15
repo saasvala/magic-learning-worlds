@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { DemoBadge } from "@/components/states/DemoBadge";
 import { Trophy, Star, Gift, Flame, Crown, Sparkles, Lock } from "lucide-react";
 import { StudentPageShell } from "@/components/StudentPageShell";
 import { FloatingStars, GlowOrb } from "@/components/animations/MagicEffects";
@@ -44,6 +45,7 @@ function RewardsPage() {
           </motion.div>
           <div>
             <h1 className="text-2xl font-bold">Treasure Vault</h1>
+            <div className="mt-1"><DemoBadge /></div>
             <p className="text-muted-foreground text-sm">{earnedCount}/{badges.length} badges earned • Keep adventuring!</p>
           </div>
         </div>

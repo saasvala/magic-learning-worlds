@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { CalendarCheck, Loader2 } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 import { AdminPageShell } from "@/components/AdminPageShell";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { StatCardsSkeleton, TableSkeleton } from "@/components/states";
 
 function AdminAttendancePage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -57,7 +58,10 @@ function AdminAttendancePage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          <div className="space-y-6">
+            <StatCardsSkeleton count={3} />
+            <TableSkeleton rows={5} />
+          </div>
         ) : (
           <>
             <div className="grid sm:grid-cols-3 gap-4 mb-6">

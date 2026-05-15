@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FileText, Plus, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { TeacherPageShell } from "@/components/TeacherPageShell";
+import { StatCardsSkeleton, TableSkeleton } from "@/components/states";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -146,7 +147,10 @@ function AssignmentsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          <div className="space-y-6">
+            <StatCardsSkeleton count={3} />
+            <TableSkeleton rows={5} />
+          </div>
         ) : (
           <>
             <div className="grid sm:grid-cols-3 gap-4 mb-6">

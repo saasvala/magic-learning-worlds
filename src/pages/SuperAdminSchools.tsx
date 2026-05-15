@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Building2, Search, Plus, MapPin, Loader2 } from "lucide-react";
 import { SuperAdminPageShell } from "@/components/SuperAdminPageShell";
+import { TableSkeleton } from "@/components/states";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,7 +102,7 @@ function SchoolsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          <TableSkeleton rows={6} />
         ) : filtered.length === 0 ? (
           <div className="glass rounded-xl p-10 text-center text-muted-foreground text-sm">
             {search ? "No schools match your search." : "No schools yet. Add one to get started."}

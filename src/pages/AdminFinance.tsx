@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { DollarSign, TrendingUp, CreditCard, Receipt, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
+import { DollarSign, TrendingUp, CreditCard, Receipt, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { AdminPageShell } from "@/components/AdminPageShell";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { StatCardsSkeleton, TableSkeleton } from "@/components/states";
 
 interface Payment {
   id: string;
@@ -60,7 +61,10 @@ function AdminFinancePage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          <div className="space-y-6">
+            <StatCardsSkeleton count={4} />
+            <TableSkeleton rows={6} />
+          </div>
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

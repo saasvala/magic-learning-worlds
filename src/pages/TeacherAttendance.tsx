@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { CalendarCheck, CheckCircle2, XCircle, Clock, Loader2 } from "lucide-react";
 import { TeacherPageShell } from "@/components/TeacherPageShell";
+import { TableSkeleton } from "@/components/states";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -129,7 +130,7 @@ function AttendancePage() {
         {!classes?.length ? (
           <div className="glass rounded-xl p-10 text-center text-muted-foreground text-sm">You have no classes assigned yet.</div>
         ) : isLoading ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          <TableSkeleton rows={6} />
         ) : !students?.length ? (
           <div className="glass rounded-xl p-10 text-center text-muted-foreground text-sm">No students enrolled in this class.</div>
         ) : (

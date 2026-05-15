@@ -74,21 +74,9 @@ function AdminHome() {
   return (
     <div className="p-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground text-sm">School Year 2025–2026</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input placeholder="Search..." className="pl-9 pr-3 py-2 text-sm bg-muted rounded-lg border-none outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary w-48" />
-            </div>
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Notifications">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              <div className="absolute top-1 right-1 w-2 h-2 bg-coral rounded-full" />
-            </button>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">School Year 2025–2026</p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
